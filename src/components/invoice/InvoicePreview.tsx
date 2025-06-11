@@ -133,41 +133,53 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({
         </div>
       </div>
 
-      {/* Totals */}
-      <div className="flex justify-end">
-        <div className="w-full max-w-sm space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Subtotal:</span>
-            <span className="text-gray-900 text-right min-w-[120px]">{formatCurrency(invoice.subtotal, invoice.currency)}</span>
-          </div>
-          {invoice.discount > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">
-                Discount {invoice.discountType === 'percentage' ? `(${invoice.discount}%)` : ''}:
-              </span>
-              <span className="text-gray-900 text-right min-w-[120px]">
-                -{formatCurrency(
-                  invoice.discountType === 'percentage' 
-                    ? (invoice.subtotal * invoice.discount) / 100 
-                    : invoice.discount, 
-                  invoice.currency
-                )}
-              </span>
-            </div>
-          )}
-          {invoice.taxRate > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Tax ({invoice.taxRate}%):</span>
-              <span className="text-gray-900 text-right min-w-[120px]">{formatCurrency(invoice.tax, invoice.currency)}</span>
-            </div>
-          )}
-          <div className="border-t border-gray-200 pt-2">
-            <div className="flex justify-between font-semibold">
-              <span className="text-gray-900">Total:</span>
-              <span className="text-gray-900 text-right min-w-[120px]">{formatCurrency(invoice.total, invoice.currency)}</span>
-            </div>
-          </div>
-        </div>
+      {/* Totals - Aligned with Amount column */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <tbody>
+            <tr>
+              <td className="w-16"></td>
+              <td></td>
+              <td className="w-20"></td>
+              <td className="w-24"></td>
+              <td className="w-24 py-2 px-2">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="text-gray-900 text-right">{formatCurrency(invoice.subtotal, invoice.currency)}</span>
+                  </div>
+                  {invoice.discount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">
+                        Discount {invoice.discountType === 'percentage' ? `(${invoice.discount}%)` : ''}:
+                      </span>
+                      <span className="text-gray-900 text-right">
+                        -{formatCurrency(
+                          invoice.discountType === 'percentage' 
+                            ? (invoice.subtotal * invoice.discount) / 100 
+                            : invoice.discount, 
+                          invoice.currency
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {invoice.taxRate > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tax ({invoice.taxRate}%):</span>
+                      <span className="text-gray-900 text-right">{formatCurrency(invoice.tax, invoice.currency)}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-200 pt-2">
+                    <div className="flex justify-between font-semibold">
+                      <span className="text-gray-900">Total:</span>
+                      <span className="text-gray-900 text-right">{formatCurrency(invoice.total, invoice.currency)}</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* Notes and Payment Terms with Signature */}

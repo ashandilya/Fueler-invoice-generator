@@ -219,36 +219,48 @@ const createInvoiceHTML = (invoice: Invoice, logoBase64: string = '', signatureB
         </table>
       </div>
 
-      <!-- Totals -->
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 30px;">
-        <div style="width: 350px;">
-          <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 12px;">
-            <span style="color: #6b7280;">Subtotal:</span>
-            <span style="color: #1f2937; text-align: right; min-width: 120px;">${formatCurrency(invoice.subtotal, invoice.currency)}</span>
-          </div>
-          ${invoice.discount > 0 ? `
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 12px;">
-              <span style="color: #6b7280;">
-                Discount ${invoice.discountType === 'percentage' ? `(${invoice.discount}%)` : ''}:
-              </span>
-              <span style="color: #1f2937; text-align: right; min-width: 120px;">
-                -${formatCurrency(discountAmount, invoice.currency)}
-              </span>
-            </div>
-          ` : ''}
-          ${invoice.taxRate > 0 ? `
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 12px;">
-              <span style="color: #6b7280;">Tax (${invoice.taxRate}%):</span>
-              <span style="color: #1f2937; text-align: right; min-width: 120px;">${formatCurrency(invoice.tax, invoice.currency)}</span>
-            </div>
-          ` : ''}
-          <div style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 8px;">
-            <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 14px;">
-              <span style="color: #1f2937;">Total:</span>
-              <span style="color: #1f2937; text-align: right; min-width: 120px;">${formatCurrency(invoice.total, invoice.currency)}</span>
-            </div>
-          </div>
-        </div>
+      <!-- Totals - Aligned with Amount column -->
+      <div style="margin-bottom: 30px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tbody>
+            <tr>
+              <td style="width: 60px;"></td>
+              <td></td>
+              <td style="width: 80px;"></td>
+              <td style="width: 100px;"></td>
+              <td style="width: 100px; padding: 8px;">
+                <div style="space-y: 8px;">
+                  <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;">
+                    <span style="color: #6b7280;">Subtotal:</span>
+                    <span style="color: #1f2937; text-align: right;">${formatCurrency(invoice.subtotal, invoice.currency)}</span>
+                  </div>
+                  ${invoice.discount > 0 ? `
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;">
+                      <span style="color: #6b7280;">
+                        Discount ${invoice.discountType === 'percentage' ? `(${invoice.discount}%)` : ''}:
+                      </span>
+                      <span style="color: #1f2937; text-align: right;">
+                        -${formatCurrency(discountAmount, invoice.currency)}
+                      </span>
+                    </div>
+                  ` : ''}
+                  ${invoice.taxRate > 0 ? `
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;">
+                      <span style="color: #6b7280;">Tax (${invoice.taxRate}%):</span>
+                      <span style="color: #1f2937; text-align: right;">${formatCurrency(invoice.tax, invoice.currency)}</span>
+                    </div>
+                  ` : ''}
+                  <div style="border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 14px;">
+                      <span style="color: #1f2937;">Total:</span>
+                      <span style="color: #1f2937; text-align: right;">${formatCurrency(invoice.total, invoice.currency)}</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- Notes and Payment Terms with Signature -->
