@@ -135,17 +135,17 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({
 
       {/* Totals */}
       <div className="flex justify-end">
-        <div className="w-full max-w-xs space-y-2">
+        <div className="w-full max-w-sm space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Subtotal:</span>
-            <span className="text-gray-900">{formatCurrency(invoice.subtotal, invoice.currency)}</span>
+            <span className="text-gray-900 text-right min-w-[120px]">{formatCurrency(invoice.subtotal, invoice.currency)}</span>
           </div>
           {invoice.discount > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">
                 Discount {invoice.discountType === 'percentage' ? `(${invoice.discount}%)` : ''}:
               </span>
-              <span className="text-gray-900">
+              <span className="text-gray-900 text-right min-w-[120px]">
                 -{formatCurrency(
                   invoice.discountType === 'percentage' 
                     ? (invoice.subtotal * invoice.discount) / 100 
@@ -158,13 +158,13 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({
           {invoice.taxRate > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Tax ({invoice.taxRate}%):</span>
-              <span className="text-gray-900">{formatCurrency(invoice.tax, invoice.currency)}</span>
+              <span className="text-gray-900 text-right min-w-[120px]">{formatCurrency(invoice.tax, invoice.currency)}</span>
             </div>
           )}
           <div className="border-t border-gray-200 pt-2">
             <div className="flex justify-between font-semibold">
               <span className="text-gray-900">Total:</span>
-              <span className="text-gray-900">{formatCurrency(invoice.total, invoice.currency)}</span>
+              <span className="text-gray-900 text-right min-w-[120px]">{formatCurrency(invoice.total, invoice.currency)}</span>
             </div>
           </div>
         </div>
