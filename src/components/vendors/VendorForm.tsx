@@ -1,0 +1,170 @@
+import React, { useState } from 'react';
+import { Save, X } from 'lucide-react';
+import { Vendor } from '../../types/vendor';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
+import { Button } from '../ui/Button';
+
+interface VendorFormProps {
+  vendor?: Vendor;
+  onSubmit: (vendor: Omit<Vendor, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  onCancel: () => void;
+  loading: boolean;
+  title: string;
+}
+
+export const VendorForm: React.FC<VendorFormProps> = ({
+  vendor,
+  onSubmit,
+  onCancel,
+  loading,
+  title,
+}) => {
+  const [formData, setFormData] = useState({
+    name: vendor?.name || '',
+    email: vendor?.email || '',
+    businessName: vendor?.businessName || '',
+    phone: vendor?.phone || '',
+    gstin: vendor?.gstin || '',
+    billingAddress: vendor?.billingAddress || '',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Vendor name is required';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.businessName.trim()) {
+      newErrors.businessName = 'Business name is required';
+    }
+
+    if (!formData.billingAddress.trim()) {
+      newErrors.billingAddress = 'Billing address is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await onSubmit(formData);
+    } catch (error) {
+      console.error('Error saving vendor:', error);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+          <button
+            onClick={onCancel}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input
+              label="Vendor Name *"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              error={errors.name}
+              placeholder="Enter vendor name"
+            />
+            
+            <Input
+              label="Email Address *"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              error={errors.email}
+              placeholder="vendor@example.com"
+            />
+          </div>
+
+          <Input
+            label="Business Name *"
+            value={formData.businessName}
+            onChange={(e) => handleInputChange('businessName', e.target.value)}
+            error={errors.businessName}
+            placeholder="Enter business name"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input
+              label="Phone Number"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="+1 (555) 123-4567"
+            />
+            
+            <Input
+              label="GSTIN"
+              value={formData.gstin}
+              onChange={(e) => handleInputChange('gstin', e.target.value)}
+              placeholder="Enter GSTIN number"
+            />
+          </div>
+
+          <Textarea
+            label="Billing Address *"
+            value={formData.billingAddress}
+            onChange={(e) => handleInputChange('billingAddress', e.target.value)}
+            error={errors.billingAddress}
+            placeholder="Enter complete billing address"
+            rows={4}
+            className="resize-none"
+          />
+
+          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              icon={Save}
+              loading={loading}
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : 'Save Vendor'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
