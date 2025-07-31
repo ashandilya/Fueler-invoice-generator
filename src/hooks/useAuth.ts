@@ -6,18 +6,6 @@ export const useAuth = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // If Supabase is not configured, return mock state
-  if (!supabase) {
-    return {
-      user: null,
-      loading: false,
-      signInWithGoogle: async () => {
-        alert('Please configure Supabase environment variables to enable authentication');
-      },
-      signOut: async () => {},
-    };
-  }
-
   useEffect(() => {
     // Get initial session
     const getSession = async () => {

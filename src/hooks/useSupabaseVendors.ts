@@ -40,22 +40,6 @@ export const useSupabaseVendors = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If Supabase is not configured, fall back to localStorage
-  if (!supabase) {
-    const { vendors: localVendors, loading: localLoading, addVendor: localAddVendor, updateVendor: localUpdateVendor, deleteVendor: localDeleteVendor, getVendorById: localGetVendorById } = useVendors();
-    
-    return {
-      vendors: localVendors,
-      loading: localLoading,
-      error: 'Using local storage (Supabase not configured)',
-      addVendor: localAddVendor,
-      updateVendor: localUpdateVendor,
-      deleteVendor: localDeleteVendor,
-      getVendorById: localGetVendorById,
-      refetch: async () => {},
-    };
-  }
-
   const fetchVendors = useCallback(async () => {
     if (!user) {
       setVendors([]);
