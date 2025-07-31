@@ -8,6 +8,18 @@ export const useCompanyProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // If Supabase is not configured, return mock state
+  if (!supabase) {
+    return {
+      profile: null,
+      loading: false,
+      error: 'Supabase not configured',
+      updateProfile: async () => { throw new Error('Supabase not configured'); },
+      uploadFile: async () => { throw new Error('Supabase not configured'); },
+      refetch: async () => {},
+    };
+  }
+
   const fetchProfile = useCallback(async () => {
     if (!user) {
       setProfile(null);
