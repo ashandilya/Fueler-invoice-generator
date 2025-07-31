@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
+import { AuthGuard } from './components/auth/AuthGuard';
+import { useAuth } from './hooks/useAuth';
 import { Header } from './components/common/Header';
 import { InvoiceForm } from './components/invoice/InvoiceForm';
 import { InvoicePreview } from './components/invoice/InvoicePreview';
 import { VendorList } from './components/vendors/VendorList';
 import { VendorSelector } from './components/vendors/VendorSelector';
 import { VendorInvoiceHistory } from './components/vendors/VendorInvoiceHistory';
+import { CompanyProfileForm } from './components/profile/CompanyProfileForm';
 import { useInvoice } from './hooks/useInvoice';
-import { useVendors } from './hooks/useVendors';
+import { useSupabaseVendors } from './hooks/useSupabaseVendors';
 import { useVendorInvoices } from './hooks/useVendorInvoices';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { generateInvoicePDF } from './utils/pdfGenerator';
 import { Vendor } from './types/vendor';
 
 function App() {
+  return (
+    <AuthGuard>
+      <AppContent />
+    </AuthGuard>
+  );
+}
+
+function AppContent() {
+  const { user } = useAuth();
   const {
     invoice,
     updateCompanyInfo,
@@ -27,10 +39,10 @@ function App() {
   const [savedInvoices, setSavedInvoices] = useLocalStorage('invoices', []);
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'form' | 'preview' | 'vendors'>('form');
+  const [activeTab, setActiveTab] = useState<'form' | 'preview' | 'vendors' | 'profile'>('form');
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
-  const { vendors, loading: vendorsLoading, addVendor, updateVendor, deleteVendor } = useVendors();
+  const { vendors, loading: vendorsLoading, addVendor, updateVendor, deleteVendor } = useSupabaseVendors();
   const { addVendorInvoice, getVendorInvoiceDetails } = useVendorInvoices();
 
   const handleSave = async () => {
@@ -149,12 +161,24 @@ function App() {
               >
                 My Vendors
               </button>
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'profile'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Company Profile
+              </button>
             </nav>
           </div>
         </div>
 
         {/* Content */}
-        {activeTab === 'vendors' ? (
+        {activeTab === 'profile' ? (
+          <CompanyProfileForm />
+        ) : activeTab === 'vendors' ? (
           <VendorList
             vendors={vendors}
             onAddVendor={addVendor}
