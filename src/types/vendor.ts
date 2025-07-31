@@ -5,6 +5,9 @@ export interface Vendor {
   businessName: string;
   phone?: string;
   gstin?: string;
+  city?: string;
+  state?: string;
+  country?: string;
   billingAddress: string;
   createdAt: Date;
   updatedAt: Date;

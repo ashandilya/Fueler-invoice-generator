@@ -92,6 +92,9 @@ function App() {
       updateClientInfo({
         name: vendor.businessName,
         email: vendor.email,
+        city: vendor.city || '',
+        state: vendor.state || '',
+        country: vendor.country || 'India',
         address: vendor.billingAddress,
         gstin: vendor.gstin || '',
       });
@@ -164,7 +167,7 @@ function App() {
             {activeTab === 'form' ? (
               <>
                 {/* Left sidebar for vendor history */}
-                {selectedVendor && (
+                {selectedVendor && vendorInvoices.length > 0 && (
                   <div className="lg:col-span-1">
                     <div className="sticky top-8">
                       <VendorInvoiceHistory
@@ -176,7 +179,7 @@ function App() {
                 )}
                 
                 {/* Main form area */}
-                <div className={selectedVendor ? "lg:col-span-2" : "lg:col-span-3"}>
+                <div className={selectedVendor && vendorInvoices.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
                   <div className="space-y-6">
                     {/* Vendor Selector */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

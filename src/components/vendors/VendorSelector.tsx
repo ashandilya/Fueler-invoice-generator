@@ -98,6 +98,11 @@ export const VendorSelector: React.FC<VendorSelectorProps> = ({
                   <div className="flex flex-col">
                     <span className="font-medium">{vendor.name}</span>
                     <span className="text-sm text-gray-500">{vendor.businessName}</span>
+                    {(vendor.city || vendor.state) && (
+                      <span className="text-xs text-gray-400">
+                        {[vendor.city, vendor.state].filter(Boolean).join(', ')}
+                      </span>
+                    )}
                     <span className="text-xs text-gray-400">{vendor.email}</span>
                   </div>
                 </button>

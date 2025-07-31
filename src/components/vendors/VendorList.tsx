@@ -135,8 +135,17 @@ export const VendorList: React.FC<VendorListProps> = ({
                   </div>
                 )}
 
+                {(vendor.city || vendor.state || vendor.country) && (
+                  <div className="flex items-start text-sm text-gray-600">
+                    <MapPin className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>
+                      {[vendor.city, vendor.state, vendor.country].filter(Boolean).join(', ')}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex items-start text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+                  <Building className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
                   <span className="whitespace-pre-line">{vendor.billingAddress}</span>
                 </div>
               </div>

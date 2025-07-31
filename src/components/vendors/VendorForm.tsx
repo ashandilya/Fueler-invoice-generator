@@ -26,6 +26,9 @@ export const VendorForm: React.FC<VendorFormProps> = ({
     businessName: vendor?.businessName || '',
     phone: vendor?.phone || '',
     gstin: vendor?.gstin || '',
+    city: vendor?.city || '',
+    state: vendor?.state || '',
+    country: vendor?.country || 'India',
     billingAddress: vendor?.billingAddress || '',
   });
 
@@ -132,6 +135,29 @@ export const VendorForm: React.FC<VendorFormProps> = ({
               value={formData.gstin}
               onChange={(e) => handleInputChange('gstin', e.target.value)}
               placeholder="Enter GSTIN number"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Input
+              label="City"
+              value={formData.city}
+              onChange={(e) => handleInputChange('city', e.target.value)}
+              placeholder="Enter city"
+            />
+            
+            <Input
+              label="State"
+              value={formData.state}
+              onChange={(e) => handleInputChange('state', e.target.value)}
+              placeholder="Enter state"
+            />
+            
+            <Input
+              label="Country"
+              value={formData.country}
+              onChange={(e) => handleInputChange('country', e.target.value)}
+              placeholder="Enter country"
             />
           </div>
 
