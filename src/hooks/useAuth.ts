@@ -53,17 +53,19 @@ export const useAuth = () => {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('Starting Google sign-in...');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: window.location.origin
         }
       });
       
       if (error) {
-        console.error('Error signing in with Google:', error);
+        console.error('Supabase auth error:', error);
         throw error;
       }
+      console.log('Google sign-in initiated successfully');
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
