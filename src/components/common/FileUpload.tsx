@@ -133,10 +133,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         </div>
       ) : (
         <div
-          className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
+          className={`relative border-2 border-dashed rounded-xl p-8 transition-all duration-200 ${
             isDragOver
-              ? 'border-blue-400 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-primary-400 bg-primary-50'
+              : 'border-gray-200 hover:border-gray-300 bg-white shadow-soft hover:shadow-soft-lg'
           }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -157,7 +157,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             )}
             <div className="mt-4">
               <p className="text-sm text-gray-600">
-                <span className="font-medium text-blue-600 hover:text-blue-500">
+                <span className="font-medium text-primary-600 hover:text-primary-500">
                   Click to upload
                 </span>{' '}
                 or drag and drop

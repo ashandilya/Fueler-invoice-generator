@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AuthGuard } from './components/auth/AuthGuard';
+import { InlineLoginOverlay } from './components/auth/InlineLoginOverlay';
 import { useAuth } from './hooks/useAuth';
 import { OnboardingForm } from './components/auth/OnboardingForm';
 import { Header } from './components/common/Header';
@@ -21,14 +21,12 @@ import { Client } from './types/client';
 
 function App() {
   return (
-    <AuthGuard>
-      <AppContent />
-    </AuthGuard>
+    <AppContent />
   );
 }
 
 function AppContent() {
-  const { user, needsOnboarding, completeOnboarding } = useAuth();
+  const { user, loading, needsOnboarding, completeOnboarding } = useAuth();
   const { profile } = useCompanyProfile();
   const {
     invoice,
@@ -52,6 +50,15 @@ function AppContent() {
 
   const { clients, loading: clientsLoading, addClient, updateClient, deleteClient } = useSupabaseClients();
   const { addClientInvoice, getClientInvoiceDetails } = useClientInvoices();
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   if (needsOnboarding) {
     return <OnboardingForm onComplete={completeOnboarding} />;
@@ -186,7 +193,12 @@ function AppContent() {
   const clientInvoices = selectedClient ? getClientInvoiceDetails(selectedClient.id) : [];
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Show login overlay if not authenticated */}
+      {!user && <InlineLoginOverlay />}
+      
+      {/* Main app content - always rendered but blurred when not authenticated */}
+      <div className={`transition-all duration-300 ${!user ? 'blur-sm pointer-events-none' : ''}`}>
       <Header
         onSave={handleSave}
         onDownload={handleDownload}
@@ -198,47 +210,47 @@ function AppContent() {
         showSaveButton={activeTab === 'form'}
       />
       
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Tab Navigation */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+        <div className="mb-12">
+          <div className="border-b border-gray-100">
+            <nav className="-mb-px flex space-x-12">
               <button
                 onClick={() => setActiveTab('form')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
                   activeTab === 'form'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                 }`}
               >
-                Invoice Details
+                Create Invoice
               </button>
               <button
                 onClick={() => setActiveTab('preview')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
                   activeTab === 'preview'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                 }`}
               >
                 Preview
               </button>
               <button
                 onClick={() => setActiveTab('clients')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
                   activeTab === 'clients'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                 }`}
               >
                 My Clients
               </button>
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
                   activeTab === 'profile'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                 }`}
               >
                 Company Profile
@@ -259,26 +271,11 @@ function AppContent() {
             loading={clientsLoading}
           />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="max-w-5xl mx-auto">
             {activeTab === 'form' ? (
-              <>
-                {/* Left sidebar for client history */}
-                {selectedClient && clientInvoices.length > 0 && (
-                  <div className="lg:col-span-1">
-                    <div className="sticky top-8">
-                      <ClientInvoiceHistory
-                        client={selectedClient}
-                        invoices={clientInvoices}
-                      />
-                    </div>
-                  </div>
-                )}
-                
-                {/* Main form area */}
-                <div className={selectedClient && clientInvoices.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
-                  <div className="space-y-6">
+                <div className="space-y-8">
                     {/* Client Selector */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
                       <ClientSelector
                         clients={clients}
                         selectedClient={selectedClient}
@@ -316,12 +313,8 @@ function AppContent() {
                       />
                     )}
                   </div>
-                </div>
-              </>
             ) : (
-              <div className="lg:col-span-3">
                 <InvoicePreview invoice={invoice} />
-              </div>
             )}
           </div>
         )}
@@ -342,6 +335,7 @@ function AppContent() {
           }
         />
       </main>
+      </div>
     </div>
   );
 }

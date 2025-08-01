@@ -64,16 +64,19 @@ export const ClientList: React.FC<ClientListProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">My Clients</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">My Clients</h2>
+          <p className="text-sm text-gray-600 mt-1">Manage your client information and history</p>
+        </div>
         <Button onClick={() => setShowForm(true)} icon={Plus}>
           Add New Client
         </Button>
       </div>
 
       {clients.length === 0 ? (
-        <div className="text-center py-12">
+        <div className="text-center py-16 bg-white rounded-2xl shadow-soft border border-gray-100">
           <Building className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No clients</h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -86,11 +89,11 @@ export const ClientList: React.FC<ClientListProps> = ({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {clients.map((client) => (
             <div
               key={client.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-soft-lg transition-all duration-200 shadow-soft"
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">

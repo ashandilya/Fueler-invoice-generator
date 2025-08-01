@@ -32,7 +32,7 @@ export const LoginPage: React.FC = () => {
             </div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Fueler Invoice Generator
+            Invoicce
           </h2>
           <p className="text-gray-600">
             Create professional invoices with ease

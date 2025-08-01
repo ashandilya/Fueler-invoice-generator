@@ -81,10 +81,13 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="max-w-3xl mx-auto">
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+            <p className="text-sm text-gray-600 mt-1">Enter client details for future invoices</p>
+          </div>
           <button
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -94,7 +97,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Input
               label="Client Name *"
               value={formData.name}

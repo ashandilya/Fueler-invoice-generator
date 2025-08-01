@@ -15,11 +15,11 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({
   const { formatCurrency } = useCurrency();
 
   const containerClasses = compact 
-    ? "bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 max-h-[500px] sm:max-h-[600px] overflow-y-auto"
-    : "bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto";
+    ? "bg-white rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 max-h-[500px] sm:max-h-[600px] overflow-y-auto"
+    : "bg-white rounded-2xl shadow-soft border border-gray-100 p-6 sm:p-8 lg:p-10 max-w-4xl mx-auto";
 
   const headerClasses = compact ? "text-base sm:text-lg" : "text-xl sm:text-2xl";
-  const sectionSpacing = compact ? "space-y-2 sm:space-y-3" : "space-y-4 sm:space-y-6";
+  const sectionSpacing = compact ? "space-y-3 sm:space-y-4" : "space-y-6 sm:space-y-8";
 
   return (
     <div className={containerClasses}>

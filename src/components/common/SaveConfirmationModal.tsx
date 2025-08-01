@@ -22,22 +22,22 @@ export const SaveConfirmationModal: React.FC<SaveConfirmationModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-soft-lg max-w-md w-full animate-slide-up">
+        <div className="flex justify-between items-center p-8 border-b border-gray-100">
+          <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
         
-        <div className="p-6">
-          <p className="text-gray-600 mb-6">{message}</p>
+        <div className="p-8">
+          <p className="text-gray-600 mb-8 leading-relaxed">{message}</p>
           
-          <div className="flex justify-end space-x-4">
+          <div className="flex justify-end space-x-3">
             <Button
               variant="outline"
               onClick={onClose}

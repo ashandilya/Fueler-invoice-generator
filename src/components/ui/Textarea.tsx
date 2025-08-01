@@ -14,8 +14,9 @@ export const Textarea: React.FC<TextareaProps> = ({
   ...props
 }) => {
   const textareaClasses = `
-    block w-full rounded-md border-gray-300 shadow-sm transition-colors
-    focus:border-blue-500 focus:ring-blue-500 sm:text-sm
+    block w-full rounded-xl border-gray-200 shadow-soft transition-all duration-200
+    focus:border-primary-500 focus:ring-primary-500 focus:shadow-soft-lg sm:text-sm
+    placeholder:text-gray-400 bg-white
     ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
     ${className}
   `;
@@ -23,7 +24,7 @@ export const Textarea: React.FC<TextareaProps> = ({
   return (
     <div className="space-y-1">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-800">
           {label}
         </label>
       )}

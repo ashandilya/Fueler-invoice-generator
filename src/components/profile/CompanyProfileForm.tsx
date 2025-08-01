@@ -122,29 +122,32 @@ export const CompanyProfileForm: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="max-w-5xl mx-auto">
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Company Profile</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Company Profile</h2>
+            <p className="text-sm text-gray-600 mt-1">Manage your company information and branding</p>
+          </div>
           <Button
             onClick={handleLogout}
             variant="outline"
             icon={LogOut}
-            className="text-red-600 border-red-300 hover:bg-red-50"
+            className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
           >
             Logout
           </Button>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl">
             <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
               <Input
                 label="Company Name"
                 value={formData.company_name}
@@ -193,7 +196,7 @@ export const CompanyProfileForm: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="relative">
                 <FileUpload
                   label="Company Logo"
@@ -226,7 +229,7 @@ export const CompanyProfileForm: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end pt-6 border-t border-gray-200">
+          <div className="flex justify-end pt-8 border-t border-gray-100">
             <Button
               type="submit"
               icon={Save}

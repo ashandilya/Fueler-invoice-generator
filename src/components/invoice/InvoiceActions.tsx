@@ -21,20 +21,20 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
   onShare,
 }) => {
   return (
-    <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-8 shadow-soft">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-green-800">Invoice Saved Successfully!</h3>
-          <p className="text-sm text-green-600">Invoice #{invoice.invoiceNumber} has been saved.</p>
+          <h3 className="text-xl font-bold text-green-800">Invoice Saved Successfully!</h3>
+          <p className="text-sm text-green-600 mt-1">Invoice #{invoice.invoiceNumber} has been saved to your dashboard.</p>
         </div>
       </div>
       
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-4">
         <Button
           onClick={onEdit}
           icon={Edit}
           variant="outline"
-          size="sm"
+          size="md"
         >
           Edit
         </Button>

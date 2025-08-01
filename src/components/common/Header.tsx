@@ -22,21 +22,23 @@ export const Header: React.FC<HeaderProps> = ({
   showSaveButton = false,
 }) => {
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white/95 backdrop-blur-sm shadow-soft border-b border-gray-100 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-18">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Invoice</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Invoicce</h1>
+            <p className="text-xs text-gray-500 mt-0.5">Modern Invoice Generator</p>
           </div>
           
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             {showSaveButton && (
               <Button
                 onClick={onSave}
                 loading={isSaving}
                 disabled={isSaving}
                 icon={Save}
-                variant="outline"
+                variant="primary"
+                size="md"
               >
                 {isSaving ? 'Saving...' : 'Save Invoice'}
               </Button>
@@ -46,8 +48,9 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onShare}
               variant="outline"
               icon={Share}
+              size="md"
             >
-              Share Link
+              Share
             </Button>
             
             <Button
@@ -55,7 +58,8 @@ export const Header: React.FC<HeaderProps> = ({
               loading={isDownloading}
               disabled={isDownloading}
               icon={Download}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white"
+              variant="secondary"
+              size="md"
             >
               {isDownloading ? 'Generating...' : 'Download PDF'}
             </Button>

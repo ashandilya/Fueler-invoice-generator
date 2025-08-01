@@ -41,11 +41,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Invoice Details Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Invoice Details</h2>
-        <div className="space-y-4">
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-8">Invoice Details</h2>
+        <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Invoice#"
@@ -72,10 +72,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       </div>
 
       {/* Company Information Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Company Information</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-8">Company Information</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
             <Input
               label="Your Company"
               value={invoice.company.name}
@@ -115,7 +115,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               placeholder="India"
             />
           </div>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <FileUpload
               label="Company Logo"
               accept="image/*"
@@ -135,9 +135,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       </div>
 
       {/* Client Information Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Client Information</h2>
-        <div className="space-y-4">
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-8">Client Information</h2>
+        <div className="space-y-6">
           <Input
             label="Your Client's Company"
             value={invoice.client.name}
@@ -184,9 +184,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       </div>
 
       {/* Line Items Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Line Items</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Line Items</h2>
           <Button onClick={onAddLineItem} icon={Plus} size="sm">
             Add Item
           </Button>
@@ -267,9 +267,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
       {/* Tax and Discount Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Tax & Discount</h2>
-          <div className="space-y-4">
+        <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-8">Tax & Discount</h2>
+          <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="Tax Rate (%)"
@@ -285,7 +285,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 <select
                   value={invoice.discountType}
                   onChange={(e) => onUpdateInvoice({ discountType: e.target.value as 'percentage' | 'fixed' })}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  className="block w-full rounded-xl border-gray-200 shadow-soft focus:border-primary-500 focus:ring-primary-500 sm:text-sm bg-white"
                 >
                   <option value="percentage">Percentage</option>
                   <option value="fixed">Fixed Amount</option>
@@ -311,9 +311,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       </div>
 
       {/* Notes and Payment Terms */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Additional Information</h2>
-        <div className="space-y-4">
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-8">Additional Information</h2>
+        <div className="space-y-6">
           <Textarea
             label="Notes"
             value={invoice.notes}
