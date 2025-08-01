@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import React from 'react';
 import { Invoice, LineItem, CompanyInfo, ClientInfo } from '../types/invoice';
 import { generateInvoiceNumber } from '../utils/invoiceUtils';
 import { useCompanyProfile } from './useCompanyProfile';
