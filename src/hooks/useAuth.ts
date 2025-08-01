@@ -2,9 +2,16 @@ import { useState, useEffect } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+interface UserProfile {
+  name: string;
+  email: string;
+  phone: string;
+}
+
 export const useAuth = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -22,9 +29,10 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Create user record in database if signing in for first time
+        // Handle user authentication
         if (event === 'SIGNED_IN' && session?.user) {
-          await createUserRecord(session.user);
+          const isNewUser = await createUserRecord(session.user);
+          setNeedsOnboarding(isNewUser);
         }
       }
     );
@@ -32,22 +40,57 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const createUserRecord = async (user: SupabaseUser) => {
+  const createUserRecord = async (user: SupabaseUser): Promise<boolean> => {
     try {
+      // Check if user already exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingUser) {
+        return false; // User already exists
+      }
+
+      // Create new user record
       const { error } = await supabase
         .from('users')
-        .upsert({
+        .insert({
           user_id: user.id,
           email: user.email!,
-        }, {
-          onConflict: 'user_id'
         });
 
       if (error) {
         console.error('Error creating user record:', error);
+        return false;
       }
+
+      return true; // New user created
     } catch (error) {
       console.error('Error creating user record:', error);
+      return false;
+    }
+  };
+
+  const completeOnboarding = async (profile: UserProfile) => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      // Update user record with profile info
+      const { error } = await supabase
+        .from('users')
+        .update({
+          email: profile.email,
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setNeedsOnboarding(false);
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      throw error;
     }
   };
 
@@ -90,7 +133,9 @@ export const useAuth = () => {
   return {
     user,
     loading,
+    needsOnboarding,
     signInWithGoogle,
     signOut,
+    completeOnboarding,
   };
 };

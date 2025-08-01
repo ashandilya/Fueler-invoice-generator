@@ -23,6 +23,7 @@ export interface CompanyProfile {
   digital_signature_url?: string;
   created_at: string;
   updated_at: string;
+  invoice_prefix?: string;
 }
 
 export interface DatabaseVendor {

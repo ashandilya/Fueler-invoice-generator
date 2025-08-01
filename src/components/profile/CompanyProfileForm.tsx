@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Upload, X } from 'lucide-react';
+import { Save, Upload, X, LogOut } from 'lucide-react';
 import { useCompanyProfile } from '../../hooks/useCompanyProfile';
+import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { Button } from '../ui/Button';
@@ -8,6 +9,7 @@ import { FileUpload } from '../common/FileUpload';
 
 export const CompanyProfileForm: React.FC = () => {
   const { profile, loading, error, updateProfile, uploadFile } = useCompanyProfile();
+  const { signOut } = useAuth();
   const [formData, setFormData] = useState({
     company_name: '',
     company_address: '',
@@ -16,6 +18,7 @@ export const CompanyProfileForm: React.FC = () => {
     country: 'India',
     company_logo_url: '',
     digital_signature_url: '',
+    invoice_prefix: 'FLB',
   });
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -31,6 +34,7 @@ export const CompanyProfileForm: React.FC = () => {
         country: profile.country || 'India',
         company_logo_url: profile.company_logo_url || '',
         digital_signature_url: profile.digital_signature_url || '',
+        invoice_prefix: profile.invoice_prefix || 'FLB',
       });
     }
   }, [profile]);
@@ -98,6 +102,17 @@ export const CompanyProfileForm: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      try {
+        await signOut();
+      } catch (error) {
+        console.error('Error signing out:', error);
+        alert('Failed to logout. Please try again.');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -111,6 +126,14 @@ export const CompanyProfileForm: React.FC = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Company Profile</h2>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            icon={LogOut}
+            className="text-red-600 border-red-300 hover:bg-red-50"
+          >
+            Logout
+          </Button>
         </div>
 
         {error && (
@@ -160,6 +183,14 @@ export const CompanyProfileForm: React.FC = () => {
                   placeholder="Country"
                 />
               </div>
+              
+              <Input
+                label="Invoice Prefix"
+                value={formData.invoice_prefix}
+                onChange={(e) => handleInputChange('invoice_prefix', e.target.value)}
+                placeholder="FLB"
+                helperText="This will be used as prefix for all invoice numbers (e.g., FLB-25-0001)"
+              />
             </div>
 
             <div className="space-y-4">

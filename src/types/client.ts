@@ -1,4 +1,4 @@
-export interface Vendor {
+export interface Client {
   id: string;
   name: string;
   email: string;
@@ -13,8 +13,8 @@ export interface Vendor {
   updatedAt: Date;
 }
 
-export interface VendorInvoice {
-  vendorId: string;
+export interface ClientInvoice {
+  clientId: string;
   invoiceId: string;
   invoiceNumber: string;
   date: Date;

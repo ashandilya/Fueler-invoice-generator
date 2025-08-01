@@ -1,44 +1,44 @@
 import React, { useState } from 'react';
 import { ChevronDown, Search, User } from 'lucide-react';
-import { Vendor } from '../../types/vendor';
+import { Client } from '../../types/client';
 
-interface VendorSelectorProps {
-  vendors: Vendor[];
-  selectedVendor?: Vendor;
-  onVendorSelect: (vendor: Vendor | null) => void;
+interface ClientSelectorProps {
+  clients: Client[];
+  selectedClient?: Client;
+  onClientSelect: (client: Client | null) => void;
   className?: string;
 }
 
-export const VendorSelector: React.FC<VendorSelectorProps> = ({
-  vendors,
-  selectedVendor,
-  onVendorSelect,
+export const ClientSelector: React.FC<ClientSelectorProps> = ({
+  clients,
+  selectedClient,
+  onClientSelect,
   className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredVendors = vendors.filter(vendor =>
-    vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleVendorSelect = (vendor: Vendor) => {
-    onVendorSelect(vendor);
+  const handleClientSelect = (client: Client) => {
+    onClientSelect(client);
     setIsOpen(false);
     setSearchTerm('');
   };
 
   const clearSelection = () => {
-    onVendorSelect(null);
+    onClientSelect(null);
     setIsOpen(false);
   };
 
   return (
     <div className={`relative ${className}`}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
-        Select from saved vendors
+        Choose My Clients
       </label>
       
       <div className="relative">
@@ -50,7 +50,7 @@ export const VendorSelector: React.FC<VendorSelectorProps> = ({
           <span className="flex items-center">
             <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-2" />
             <span className="block truncate">
-              {selectedVendor ? selectedVendor.name : 'Choose a vendor...'}
+              {selectedClient ? selectedClient.name : 'Choose a client...'}
             </span>
           </span>
           <span className="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -66,14 +66,14 @@ export const VendorSelector: React.FC<VendorSelectorProps> = ({
                 <input
                   type="text"
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="Search vendors..."
+                  placeholder="Search clients..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
 
-            {selectedVendor && (
+            {selectedClient && (
               <button
                 onClick={clearSelection}
                 className="w-full text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 border-b border-gray-100"
@@ -82,28 +82,28 @@ export const VendorSelector: React.FC<VendorSelectorProps> = ({
               </button>
             )}
 
-            {filteredVendors.length === 0 ? (
+            {filteredClients.length === 0 ? (
               <div className="px-3 py-2 text-sm text-gray-500">
-                {searchTerm ? 'No vendors found' : 'No vendors available'}
+                {searchTerm ? 'No clients found' : 'No clients available'}
               </div>
             ) : (
-              filteredVendors.map((vendor) => (
+              filteredClients.map((client) => (
                 <button
-                  key={vendor.id}
-                  onClick={() => handleVendorSelect(vendor)}
+                  key={client.id}
+                  onClick={() => handleClientSelect(client)}
                   className={`w-full text-left px-3 py-2 hover:bg-gray-50 ${
-                    selectedVendor?.id === vendor.id ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
+                    selectedClient?.id === client.id ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="font-medium">{vendor.name}</span>
-                    <span className="text-sm text-gray-500">{vendor.businessName}</span>
-                    {(vendor.city || vendor.state) && (
+                    <span className="font-medium">{client.name}</span>
+                    <span className="text-sm text-gray-500">{client.businessName}</span>
+                    {(client.city || client.state) && (
                       <span className="text-xs text-gray-400">
-                        {[vendor.city, vendor.state].filter(Boolean).join(', ')}
+                        {[client.city, client.state].filter(Boolean).join(', ')}
                       </span>
                     )}
-                    <span className="text-xs text-gray-400">{vendor.email}</span>
+                    <span className="text-xs text-gray-400">{client.email}</span>
                   </div>
                 </button>
               ))

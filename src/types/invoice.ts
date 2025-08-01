@@ -9,6 +9,8 @@ export interface CompanyInfo {
   website: string;
   logo?: string;
   signature?: string;
+  paymentTerms?: string;
+  invoicePrefix?: string;
 }
 
 export interface ClientInfo {

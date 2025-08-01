@@ -1,19 +1,19 @@
 import React from 'react';
 import { FileText, Calendar, DollarSign } from 'lucide-react';
 import { Invoice } from '../../types/invoice';
-import { Vendor } from '../../types/vendor';
+import { Client } from '../../types/client';
 import { formatDate } from '../../utils/invoiceUtils';
 import { useCurrency } from '../../hooks/useCurrency';
 
-interface VendorInvoiceHistoryProps {
-  vendor: Vendor;
+interface ClientInvoiceHistoryProps {
+  client: Client;
   invoices: Invoice[];
   onInvoiceClick?: (invoice: Invoice) => void;
   className?: string;
 }
 
-export const VendorInvoiceHistory: React.FC<VendorInvoiceHistoryProps> = ({
-  vendor,
+export const ClientInvoiceHistory: React.FC<ClientInvoiceHistoryProps> = ({
+  client,
   invoices,
   onInvoiceClick,
   className = '',
@@ -37,13 +37,13 @@ export const VendorInvoiceHistory: React.FC<VendorInvoiceHistoryProps> = ({
     return (
       <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
         <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Past Invoices for {vendor.name}
+          Past Invoices for {client.name}
         </h3>
         <div className="text-center py-8">
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
           <h4 className="mt-2 text-sm font-medium text-gray-900">No invoices yet</h4>
           <p className="mt-1 text-sm text-gray-500">
-            This is the first invoice for this vendor.
+            This is the first invoice for this client.
           </p>
         </div>
       </div>
@@ -53,7 +53,7 @@ export const VendorInvoiceHistory: React.FC<VendorInvoiceHistoryProps> = ({
   return (
     <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
       <h3 className="text-lg font-medium text-gray-900 mb-4">
-        Past Invoices for {vendor.name}
+        Past Invoices for {client.name}
       </h3>
       
       <div className="space-y-3">

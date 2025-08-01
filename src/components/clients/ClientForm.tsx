@@ -1,35 +1,35 @@
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
-import { Vendor } from '../../types/vendor';
+import { Client } from '../../types/client';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { Button } from '../ui/Button';
 
-interface VendorFormProps {
-  vendor?: Vendor;
-  onSubmit: (vendor: Omit<Vendor, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+interface ClientFormProps {
+  client?: Client;
+  onSubmit: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   onCancel: () => void;
   loading: boolean;
   title: string;
 }
 
-export const VendorForm: React.FC<VendorFormProps> = ({
-  vendor,
+export const ClientForm: React.FC<ClientFormProps> = ({
+  client,
   onSubmit,
   onCancel,
   loading,
   title,
 }) => {
   const [formData, setFormData] = useState({
-    name: vendor?.name || '',
-    email: vendor?.email || '',
-    businessName: vendor?.businessName || '',
-    phone: vendor?.phone || '',
-    gstin: vendor?.gstin || '',
-    city: vendor?.city || '',
-    state: vendor?.state || '',
-    country: vendor?.country || 'India',
-    billingAddress: vendor?.billingAddress || '',
+    name: client?.name || '',
+    email: client?.email || '',
+    businessName: client?.businessName || '',
+    phone: client?.phone || '',
+    gstin: client?.gstin || '',
+    city: client?.city || '',
+    state: client?.state || '',
+    country: client?.country || 'India',
+    billingAddress: client?.billingAddress || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -38,7 +38,7 @@ export const VendorForm: React.FC<VendorFormProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Vendor name is required';
+      newErrors.name = 'Client name is required';
     }
 
     if (!formData.email.trim()) {
@@ -69,7 +69,7 @@ export const VendorForm: React.FC<VendorFormProps> = ({
     try {
       await onSubmit(formData);
     } catch (error) {
-      console.error('Error saving vendor:', error);
+      console.error('Error saving client:', error);
     }
   };
 
@@ -96,11 +96,11 @@ export const VendorForm: React.FC<VendorFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input
-              label="Vendor Name *"
+              label="Client Name *"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               error={errors.name}
-              placeholder="Enter vendor name"
+              placeholder="Enter client name"
             />
             
             <Input
@@ -109,7 +109,7 @@ export const VendorForm: React.FC<VendorFormProps> = ({
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               error={errors.email}
-              placeholder="vendor@example.com"
+              placeholder="client@example.com"
             />
           </div>
 
@@ -186,7 +186,7 @@ export const VendorForm: React.FC<VendorFormProps> = ({
               loading={loading}
               disabled={loading}
             >
-              {loading ? 'Saving...' : 'Save Vendor'}
+              {loading ? 'Saving...' : 'Save Client'}
             </Button>
           </div>
         </form>

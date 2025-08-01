@@ -1,10 +1,10 @@
 import { format } from 'date-fns';
 
-export const generateInvoiceNumber = (): string => {
+export const generateInvoiceNumber = (prefix: string = 'FLB'): string => {
   const now = new Date();
   const year = now.getFullYear().toString().slice(-2); // Get last 2 digits of year
   const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `FLB-${year}-${random}`;
+  return `${prefix}-${year}-${random}`;
 };
 
 export const formatDate = (date: Date): string => {

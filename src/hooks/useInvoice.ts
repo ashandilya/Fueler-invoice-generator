@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Invoice, LineItem, CompanyInfo, ClientInfo } from '../types/invoice';
 import { generateInvoiceNumber } from '../utils/invoiceUtils';
+import { useCompanyProfile } from './useCompanyProfile';
 
 const initialCompanyInfo: CompanyInfo = {
   name: 'KiwisMedia Technologies Pvt. Ltd.',
@@ -13,6 +14,8 @@ const initialCompanyInfo: CompanyInfo = {
   website: '',
   logo: '/fueler_logo.png',
   signature: '/signature.png.jpg',
+  paymentTerms: 'Payment due within 30 days\n\nBank Payment Details:\nKiwisMedia Technologies Private Limited.\nBank: IDFC Bank First\nA/C no: 10043617893\nIFSC: IDF80040101',
+  invoicePrefix: 'FLB',
 };
 
 const initialClientInfo: ClientInfo = {
@@ -48,8 +51,33 @@ const createInitialInvoice = (): Invoice => ({
   updatedAt: new Date(),
 });
 
-export const useInvoice = () => {
+export const useInvoice = (companyProfile?: any) => {
   const [invoice, setInvoice] = useState<Invoice>(createInitialInvoice());
+
+  // Update company info from profile when available
+  React.useEffect(() => {
+    if (companyProfile) {
+      const updatedCompanyInfo: CompanyInfo = {
+        name: companyProfile.company_name || initialCompanyInfo.name,
+        contactName: initialCompanyInfo.contactName,
+        address: companyProfile.company_address || initialCompanyInfo.address,
+        city: companyProfile.city || initialCompanyInfo.city,
+        state: companyProfile.state || initialCompanyInfo.state,
+        country: companyProfile.country || initialCompanyInfo.country,
+        email: initialCompanyInfo.email,
+        website: initialCompanyInfo.website,
+        logo: companyProfile.company_logo_url || initialCompanyInfo.logo,
+        signature: companyProfile.digital_signature_url || initialCompanyInfo.signature,
+        paymentTerms: initialCompanyInfo.paymentTerms,
+        invoicePrefix: companyProfile.invoice_prefix || initialCompanyInfo.invoicePrefix,
+      };
+      
+      setInvoice(prev => ({
+        ...prev,
+        company: updatedCompanyInfo,
+      }));
+    }
+  }, [companyProfile]);
 
   const updateCompanyInfo = useCallback((companyInfo: Partial<CompanyInfo>) => {
     setInvoice(prev => ({
