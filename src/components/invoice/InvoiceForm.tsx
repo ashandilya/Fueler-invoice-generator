@@ -10,6 +10,7 @@ import { Invoice, LineItem, Company, Client } from '../../types/invoice';
 interface InvoiceFormProps {
   invoice: Invoice;
   onUpdateInvoice: (updates: Partial<Invoice>) => void;
+  formErrors?: Record<string, string>;
   onUpdateCompany: (company: Company) => void;
   onUpdateClient: (client: Client) => void;
   onSaveInvoice: () => void;
@@ -23,6 +24,7 @@ interface InvoiceFormProps {
 export function InvoiceForm({
   invoice,
   onUpdateInvoice,
+  formErrors = {},
   onUpdateCompany,
   onUpdateClient,
   onSaveInvoice,
@@ -55,7 +57,10 @@ export function InvoiceForm({
     const updatedItems = lineItems.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
-        if (field === 'quantity' || field === 'rate') {
+          // Ensure quantity and rate are valid numbers
+          const quantity = Number(updatedItem.quantity) || 0;
+          const rate = Number(updatedItem.rate) || 0;
+          updatedItem.amount = quantity * rate;
           updatedItem.amount = Number(updatedItem.quantity) * Number(updatedItem.rate);
         }
         return updatedItem;

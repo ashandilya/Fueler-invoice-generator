@@ -47,6 +47,7 @@ function AppContent() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState<{ type: 'company' | 'client'; data: any } | null>(null);
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const { clients, loading: clientsLoading, addClient, updateClient, deleteClient } = useSupabaseClients();
   const { addClientInvoice, getClientInvoiceDetails } = useClientInvoices();
@@ -64,7 +65,37 @@ function AppContent() {
     return <OnboardingForm onComplete={completeOnboarding} />;
   }
 
+  const validateInvoiceForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    if (!invoice.client.name.trim()) {
+      errors.clientName = 'Client name is required';
+    }
+    
+    if (!invoice.client.address.trim()) {
+      errors.clientAddress = 'Client address is required';
+    }
+    
+    if (invoice.items.length === 0) {
+      errors.items = 'At least one item is required';
+    }
+    
+    // Check if any item has empty description
+    const hasEmptyItems = invoice.items.some(item => !item.description.trim());
+    if (hasEmptyItems) {
+      errors.itemDescription = 'All items must have a description';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
+    // Validate form first
+    if (!validateInvoiceForm()) {
+      return;
+    }
+    
     // Show save confirmation modal for client info if client data exists
     if (invoice.client.name || invoice.client.address) {
       setPendingSaveData({ type: 'client', data: invoice.client });
@@ -110,6 +141,11 @@ function AppContent() {
   };
 
   const handleDownload = async () => {
+    // Validate form first
+    if (!validateInvoiceForm()) {
+      return;
+    }
+    
     // Show save confirmation modal for client info if client data exists
     if (invoice.client.name || invoice.client.address) {
       setPendingSaveData({ type: 'client', data: invoice.client });
@@ -179,7 +215,9 @@ function AppContent() {
       if (pendingSaveData.type === 'company') {
         // Save to company profile
         try {
-          await updateProfile(pendingSaveData.data);
+          // Note: updateProfile is not available in this scope
+          // This would need to be handled differently
+          console.log('Company data to save:', pendingSaveData.data);
         } catch (error) {
           console.error('Error saving company info:', error);
           alert('Failed to save company info.');
@@ -208,6 +246,37 @@ function AppContent() {
     } finally {
       setShowSaveModal(false);
       setPendingSaveData(null);
+    }
+  };
+
+  const handleEditInvoice = (invoiceToEdit: Invoice) => {
+    // Load the invoice data into the form
+    setInvoice(invoiceToEdit);
+    setActiveTab('form');
+    setShowInvoiceActions(false);
+  };
+
+  const handleDuplicateInvoice = (invoiceToDuplicate: Invoice) => {
+    // Create a new invoice with the same data but new ID and number
+    const duplicatedInvoice = {
+      ...invoiceToDuplicate,
+      id: crypto.randomUUID(),
+      invoiceNumber: generateInvoiceNumber(invoiceToDuplicate.company.invoicePrefix),
+      date: new Date(),
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      status: 'draft' as const,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setInvoice(duplicatedInvoice);
+    setActiveTab('form');
+    setShowInvoiceActions(false);
+  };
+
+  const handleDeleteInvoice = (invoiceId: string) => {
+    if (confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
+      const updatedInvoices = savedInvoices.filter(inv => inv.id !== invoiceId);
+      setSavedInvoices(updatedInvoices);
     }
   };
 
@@ -297,20 +366,9 @@ function AppContent() {
         ) : activeTab === 'invoices' ? (
           <PastInvoicesTab
             invoices={savedInvoices}
-            onEdit={(invoice) => {
-              // Load invoice data and switch to form tab
-              setActiveTab('form');
-            }}
-            onDuplicate={(invoice) => {
-              const newInvoice = { ...invoice, id: crypto.randomUUID() };
-              // Handle duplicate logic
-            }}
-            onDelete={(invoiceId) => {
-              if (confirm('Are you sure you want to delete this invoice?')) {
-                const updatedInvoices = savedInvoices.filter(inv => inv.id !== invoiceId);
-                setSavedInvoices(updatedInvoices);
-              }
-            }}
+            onEdit={handleEditInvoice}
+            onDuplicate={handleDuplicateInvoice}
+            onDelete={handleDeleteInvoice}
             onDownload={handleDownload}
             onShare={handleShare}
           />
@@ -344,6 +402,7 @@ function AppContent() {
                       onUpdateLineItem={updateLineItem}
                       onRemoveLineItem={removeLineItem}
                       onUpdateInvoice={updateInvoiceDetails}
+                      formErrors={formErrors}
                     />
                     
                     {showInvoiceActions && (

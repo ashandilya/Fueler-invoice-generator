@@ -124,6 +124,8 @@ export const useAuth = () => {
         console.error('Error signing out:', error);
         throw error;
       }
+      // Force page reload to clear all state
+      window.location.reload();
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
