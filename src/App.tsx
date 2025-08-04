@@ -42,7 +42,6 @@ function AppContent() {
   const [savedInvoices, setSavedInvoices] = useLocalStorage('invoices', []);
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'form' | 'preview' | 'clients' | 'profile'>('form');
   const [activeTab, setActiveTab] = useState<'form' | 'preview' | 'clients' | 'invoices' | 'profile'>('form');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
