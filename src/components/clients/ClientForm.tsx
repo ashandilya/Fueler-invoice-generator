@@ -55,6 +55,14 @@ export const ClientForm: React.FC<ClientFormProps> = ({
       newErrors.billingAddress = 'Billing address is required';
     }
 
+    if (formData.phone && !/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/[\s\-\(\)]/g, ''))) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+
+    if (formData.gstin && formData.gstin.length > 0 && formData.gstin.length !== 15) {
+      newErrors.gstin = 'GSTIN must be 15 characters long';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -70,6 +78,9 @@ export const ClientForm: React.FC<ClientFormProps> = ({
       await onSubmit(formData);
     } catch (error) {
       console.error('Error saving client:', error);
+      // Show specific error message from validation
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save client';
+      alert(errorMessage);
     }
   };
 
@@ -130,6 +141,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               type="tel"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
+              error={errors.phone}
               placeholder="+1 (555) 123-4567"
             />
             
@@ -137,7 +149,9 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               label="GSTIN"
               value={formData.gstin}
               onChange={(e) => handleInputChange('gstin', e.target.value)}
+              error={errors.gstin}
               placeholder="Enter GSTIN number"
+              helperText="15-digit GSTIN number (optional)"
             />
           </div>
 

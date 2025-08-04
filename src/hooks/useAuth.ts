@@ -125,18 +125,14 @@ export const useAuth = () => {
         throw error;
       }
       
-      // Clear all local storage
-      // Clear all invoice and app-related data
+      // Only clear auth-related data, preserve invoices and clients
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && (
-          key.includes('invoice') || 
-          key.includes('client') || 
-          key.includes('company') ||
-          key.startsWith('invoices') ||
-          key.startsWith('clients') ||
-          key === 'shared_invoices'
+          key.includes('auth') || 
+          key.includes('session') ||
+          key.includes('supabase')
         )) {
           keysToRemove.push(key);
         }

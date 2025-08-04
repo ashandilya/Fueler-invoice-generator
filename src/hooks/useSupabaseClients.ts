@@ -89,6 +89,23 @@ export const useSupabaseClients = () => {
   const addClient = useCallback(async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client> => {
     if (!user) throw new Error('User not authenticated');
 
+    // Validate client data before saving
+    if (!clientData.name.trim()) {
+      throw new Error('Client name is required');
+    }
+    if (!clientData.email.trim()) {
+      throw new Error('Email is required');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientData.email)) {
+      throw new Error('Please enter a valid email address');
+    }
+    if (!clientData.businessName.trim()) {
+      throw new Error('Business name is required');
+    }
+    if (!clientData.billingAddress.trim()) {
+      throw new Error('Billing address is required');
+    }
+
     try {
       setError(null);
       const dbClient = convertToDbClient(clientData, user.id);
@@ -118,6 +135,20 @@ export const useSupabaseClients = () => {
 
   const updateClient = useCallback(async (id: string, updates: Partial<Client>): Promise<void> => {
     if (!user) throw new Error('User not authenticated');
+
+    // Validate updates if they contain required fields
+    if (updates.name !== undefined && !updates.name.trim()) {
+      throw new Error('Client name cannot be empty');
+    }
+    if (updates.email !== undefined && (!updates.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.email))) {
+      throw new Error('Please enter a valid email address');
+    }
+    if (updates.businessName !== undefined && !updates.businessName.trim()) {
+      throw new Error('Business name cannot be empty');
+    }
+    if (updates.billingAddress !== undefined && !updates.billingAddress.trim()) {
+      throw new Error('Billing address cannot be empty');
+    }
 
     try {
       setError(null);

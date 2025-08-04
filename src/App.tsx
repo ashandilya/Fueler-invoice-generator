@@ -138,6 +138,7 @@ function AppContent() {
         resetInvoice();
         setSelectedClient(null);
         setShowInvoiceActions(false);
+        setActiveTab('form'); // Ensure we're on the form tab
       }, 3000);
       
     } catch (error) {
