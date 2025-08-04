@@ -57,6 +57,7 @@ export function InvoiceForm({
     const updatedItems = lineItems.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
+        if (field === 'quantity' || field === 'rate') {
           // Ensure quantity and rate are valid numbers
           const quantity = Number(updatedItem.quantity) || 0;
           const rate = Number(updatedItem.rate) || 0;
@@ -264,7 +265,7 @@ export function InvoiceForm({
                     const value = e.target.value;
                     const numericValue = value === '' ? 0 : parseFloat(value);
                     if (!isNaN(numericValue)) {
-                      onUpdateLineItem(item.id, { rate: numericValue });
+                      updateLineItem(item.id, 'rate', numericValue);
                     }
                   }}
                   placeholder="0.00"
