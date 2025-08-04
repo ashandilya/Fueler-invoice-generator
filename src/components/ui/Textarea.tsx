@@ -14,7 +14,7 @@ export const Textarea: React.FC<TextareaProps> = ({
   ...props
 }) => {
   const textareaClasses = `
-    block w-full rounded-xl border-gray-200 shadow-soft transition-all duration-200
+    block w-full px-4 py-3 rounded-xl border-gray-200 shadow-soft transition-all duration-200
     focus:border-primary-500 focus:ring-primary-500 focus:shadow-soft-lg sm:text-sm
     placeholder:text-gray-400 bg-white
     ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}

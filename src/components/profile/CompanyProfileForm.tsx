@@ -96,7 +96,7 @@ export const CompanyProfileForm: React.FC = () => {
       alert('Company profile updated successfully!');
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert('Failed to save profile. Please try again.');
+      alert('Failed to save info.');
     } finally {
       setSaving(false);
     }

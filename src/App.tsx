@@ -43,6 +43,7 @@ function AppContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [activeTab, setActiveTab] = useState<'form' | 'preview' | 'clients' | 'profile'>('form');
+  const [activeTab, setActiveTab] = useState<'form' | 'preview' | 'clients' | 'invoices' | 'profile'>('form');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState<{ type: 'company' | 'client'; data: any } | null>(null);
@@ -65,6 +66,12 @@ function AppContent() {
   }
 
   const handleSave = async () => {
+    // Show save confirmation modal for client info if client data exists
+    if (invoice.client.name || invoice.client.address) {
+      setPendingSaveData({ type: 'client', data: invoice.client });
+      setShowSaveModal(true);
+    }
+    
     setIsSaving(true);
     try {
       const updatedInvoices = [...savedInvoices];
@@ -104,6 +111,12 @@ function AppContent() {
   };
 
   const handleDownload = async () => {
+    // Show save confirmation modal for client info if client data exists
+    if (invoice.client.name || invoice.client.address) {
+      setPendingSaveData({ type: 'client', data: invoice.client });
+      setShowSaveModal(true);
+    }
+    
     setIsDownloading(true);
     try {
       await generateInvoicePDF(invoice);
@@ -166,23 +179,33 @@ function AppContent() {
     try {
       if (pendingSaveData.type === 'company') {
         // Save to company profile
-        console.log('Saving company info to profile:', pendingSaveData.data);
+        try {
+          await updateProfile(pendingSaveData.data);
+        } catch (error) {
+          console.error('Error saving company info:', error);
+          alert('Failed to save company info.');
+        }
       } else if (pendingSaveData.type === 'client') {
         // Save to clients
-        const clientData = {
-          name: pendingSaveData.data.name,
-          email: pendingSaveData.data.email || '',
-          businessName: pendingSaveData.data.name,
-          billingAddress: pendingSaveData.data.address || '',
-          city: pendingSaveData.data.city,
-          state: pendingSaveData.data.state,
-          country: pendingSaveData.data.country,
-          gstin: pendingSaveData.data.gstin,
-        };
-        await addClient(clientData);
+        try {
+          const clientData = {
+            name: pendingSaveData.data.name,
+            email: pendingSaveData.data.email || '',
+            businessName: pendingSaveData.data.name,
+            billingAddress: pendingSaveData.data.address || '',
+            city: pendingSaveData.data.city,
+            state: pendingSaveData.data.state,
+            country: pendingSaveData.data.country,
+            gstin: pendingSaveData.data.gstin,
+          };
+          await addClient(clientData);
+        } catch (error) {
+          console.error('Error saving client info:', error);
+          alert('Failed to save client info.');
+        }
       }
     } catch (error) {
-      console.error('Error saving data:', error);
+      console.error('Error in save confirmation:', error);
     } finally {
       setShowSaveModal(false);
       setPendingSaveData(null);
@@ -243,7 +266,17 @@ function AppContent() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                 }`}
               >
-                My Clients
+                Clients
+              </button>
+              <button
+                onClick={() => setActiveTab('invoices')}
+                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                  activeTab === 'invoices'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
+                }`}
+              >
+                Past Invoices
               </button>
               <button
                 onClick={() => setActiveTab('profile')}
@@ -253,7 +286,7 @@ function AppContent() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                 }`}
               >
-                Company Profile
+                Profile
               </button>
             </nav>
           </div>
@@ -262,6 +295,26 @@ function AppContent() {
         {/* Content */}
         {activeTab === 'profile' ? (
           <CompanyProfileForm />
+        ) : activeTab === 'invoices' ? (
+          <PastInvoicesTab
+            invoices={savedInvoices}
+            onEdit={(invoice) => {
+              // Load invoice data and switch to form tab
+              setActiveTab('form');
+            }}
+            onDuplicate={(invoice) => {
+              const newInvoice = { ...invoice, id: crypto.randomUUID() };
+              // Handle duplicate logic
+            }}
+            onDelete={(invoiceId) => {
+              if (confirm('Are you sure you want to delete this invoice?')) {
+                const updatedInvoices = savedInvoices.filter(inv => inv.id !== invoiceId);
+                setSavedInvoices(updatedInvoices);
+              }
+            }}
+            onDownload={handleDownload}
+            onShare={handleShare}
+          />
         ) : activeTab === 'clients' ? (
           <ClientList
             clients={clients}

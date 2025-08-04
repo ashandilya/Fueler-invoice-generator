@@ -24,9 +24,9 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
   const rateDirection = rates.INR > 80 ? 'up' : 'down'; // Arbitrary threshold for demo
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 ${className}`}>
+    <div className={`bg-white rounded-2xl shadow-soft border border-gray-100 p-8 ${className}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium text-gray-900">Currency</h3>
+        <h2 className="text-xl font-semibold text-gray-900">Currency</h2>
         <button
           onClick={refreshRates}
           disabled={loading}

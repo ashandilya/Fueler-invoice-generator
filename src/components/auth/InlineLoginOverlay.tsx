@@ -26,19 +26,18 @@ export const InlineLoginOverlay: React.FC = () => {
       <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
       
       {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md mx-4 animate-slide-up">
-        <div className="glass-effect rounded-2xl shadow-soft-lg p-8">
+      <div className="relative z-10 w-full max-w-lg mx-4 animate-slide-up">
+        <div className="bg-white rounded-2xl shadow-soft-lg border border-gray-100 p-8">
           {/* Logo and Branding */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl mb-4 shadow-soft">
               <FileText className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Welcome to Invoicce
+              Welcome to Invoicce.to
             </h1>
             <p className="text-gray-600 text-sm leading-relaxed">
-              Modern invoice generator designed for small and medium businesses. 
-              Create professional invoices in minutes.
+              Create professional invoices for free in seconds. Simple, fast invoice generator for freelancers, creators, and founders.
             </p>
           </div>
 
@@ -67,7 +66,8 @@ export const InlineLoginOverlay: React.FC = () => {
             onClick={handleGoogleSignIn}
             loading={isLoading}
             disabled={isLoading}
-            className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-soft hover:shadow-soft-lg transition-all duration-200"
+            variant="primary"
+            className="w-full"
             size="lg"
           >
             <div className="flex items-center justify-center space-x-3">
