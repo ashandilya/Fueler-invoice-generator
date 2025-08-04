@@ -33,7 +33,11 @@ const createInitialInvoice = (): Invoice => ({
   id: crypto.randomUUID(),
   invoiceNumber: generateInvoiceNumber(),
   date: new Date(),
-  dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+  dueDate: (() => {
+    const dueDate = new Date();
+    dueDate.setMonth(dueDate.getMonth() + 1);
+    return dueDate;
+  })(), // 1 month from today
   company: initialCompanyInfo,
   client: initialClientInfo,
   items: [],

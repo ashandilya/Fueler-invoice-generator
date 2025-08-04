@@ -90,7 +90,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
           </div>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="min-w-[140px]"
           >
             <X className="w-6 h-6" />
           </button>

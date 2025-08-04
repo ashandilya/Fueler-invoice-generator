@@ -8,6 +8,7 @@ import { InvoicePreview } from './components/invoice/InvoicePreview';
 import { ClientList } from './components/clients/ClientList';
 import { ClientSelector } from './components/clients/ClientSelector';
 import { ClientInvoiceHistory } from './components/clients/ClientInvoiceHistory';
+import { PastInvoicesTab } from './components/invoice/PastInvoicesTab';
 import { CompanyProfileForm } from './components/profile/CompanyProfileForm';
 import { SaveConfirmationModal } from './components/common/SaveConfirmationModal';
 import { InvoiceActions } from './components/invoice/InvoiceActions';
@@ -47,7 +48,6 @@ function AppContent() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState<{ type: 'company' | 'client'; data: any } | null>(null);
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const { clients, loading: clientsLoading, addClient, updateClient, deleteClient } = useSupabaseClients();
   const { addClientInvoice, getClientInvoiceDetails } = useClientInvoices();
@@ -66,40 +66,24 @@ function AppContent() {
   }
 
   const validateInvoiceForm = (): boolean => {
-    const errors: Record<string, string> = {};
-    
-    if (!invoice.client.name.trim()) {
-      errors.clientName = 'Client name is required';
-    }
-    
-    if (!invoice.client.address.trim()) {
-      errors.clientAddress = 'Client address is required';
-    }
-    
-    if (invoice.items.length === 0) {
-      errors.items = 'At least one item is required';
-    }
-    
-    // Check if any item has empty description
-    const hasEmptyItems = invoice.items.some(item => !item.description.trim());
-    if (hasEmptyItems) {
-      errors.itemDescription = 'All items must have a description';
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return invoice.client.name.trim() !== '' && 
+           invoice.client.address.trim() !== '' && 
+           invoice.items.length > 0 &&
+           invoice.items.every(item => item.description.trim() !== '');
   };
 
   const handleSave = async () => {
     // Validate form first
     if (!validateInvoiceForm()) {
+      alert('Please fill in all required fields: Client name, address, and at least one item with description.');
       return;
     }
     
-    // Show save confirmation modal for client info if client data exists
-    if (invoice.client.name || invoice.client.address) {
+    // Show save confirmation modal for client info if client data exists and not already a saved client
+    if ((invoice.client.name || invoice.client.address) && !selectedClient) {
       setPendingSaveData({ type: 'client', data: invoice.client });
       setShowSaveModal(true);
+      return;
     }
     
     setIsSaving(true);
@@ -143,13 +127,15 @@ function AppContent() {
   const handleDownload = async () => {
     // Validate form first
     if (!validateInvoiceForm()) {
+      alert('Please fill in all required fields: Client name, address, and at least one item with description.');
       return;
     }
     
-    // Show save confirmation modal for client info if client data exists
-    if (invoice.client.name || invoice.client.address) {
+    // Show save confirmation modal for client info if client data exists and not already a saved client
+    if ((invoice.client.name || invoice.client.address) && !selectedClient) {
       setPendingSaveData({ type: 'client', data: invoice.client });
       setShowSaveModal(true);
+      return;
     }
     
     setIsDownloading(true);
@@ -215,8 +201,6 @@ function AppContent() {
       if (pendingSaveData.type === 'company') {
         // Save to company profile
         try {
-          // Note: updateProfile is not available in this scope
-          // This would need to be handled differently
           console.log('Company data to save:', pendingSaveData.data);
         } catch (error) {
           console.error('Error saving company info:', error);
@@ -238,14 +222,27 @@ function AppContent() {
           await addClient(clientData);
         } catch (error) {
           console.error('Error saving client info:', error);
-          alert('Failed to save client info.');
+          alert('Failed to save info.');
         }
       }
     } catch (error) {
       console.error('Error in save confirmation:', error);
+      alert('Failed to save info.');
     } finally {
       setShowSaveModal(false);
       setPendingSaveData(null);
+      
+      // Continue with the original action after saving
+      if (pendingSaveData?.type === 'client') {
+        // If we were trying to save, continue with save
+        if (isSaving) {
+          handleSave();
+        }
+        // If we were trying to download, continue with download
+        if (isDownloading) {
+          handleDownload();
+        }
+      }
     }
   };
 
@@ -388,49 +385,45 @@ function AppContent() {
         ) : (
           <div className="max-w-5xl mx-auto">
             {activeTab === 'form' ? (
-                <div className="space-y-8">
-                    {/* Client Selector */}
-                    <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-                      <ClientSelector
-                        clients={clients}
-                        selectedClient={selectedClient}
-                        onClientSelect={handleClientSelect}
-                      />
-                    </div>
-                    
-                    {/* Invoice Form */}
-                    <InvoiceForm
-                      invoice={invoice}
-                      onUpdateCompany={handleCompanyInfoChange}
-                      onUpdateClient={handleClientInfoChange}
-                      onAddLineItem={addLineItem}
-                      onUpdateLineItem={updateLineItem}
-                      onRemoveLineItem={removeLineItem}
-                      onUpdateInvoice={updateInvoiceDetails}
-                      formErrors={formErrors}
-                    />
-                    
-                    {showInvoiceActions && (
-                      <InvoiceActions
-                        invoice={invoice}
-                        onEdit={() => setShowInvoiceActions(false)}
-                        onDuplicate={() => {
-                          const newInvoice = { ...invoice, id: crypto.randomUUID() };
-                          // Handle duplicate logic
-                        }}
-                        onDelete={() => {
-                          if (confirm('Are you sure you want to delete this invoice?')) {
-                            resetInvoice();
-                            setShowInvoiceActions(false);
-                          }
-                        }}
-                        onDownload={handleDownload}
-                        onShare={handleShare}
-                      />
-                    )}
-                  </div>
+              <div className="space-y-8">
+                {/* Client Selector */}
+                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
+                  <ClientSelector
+                    clients={clients}
+                    selectedClient={selectedClient}
+                    onClientSelect={handleClientSelect}
+                  />
+                </div>
+                
+                {/* Invoice Form */}
+                <InvoiceForm
+                  invoice={invoice}
+                  onUpdateCompany={updateCompanyInfo}
+                  onUpdateClient={updateClientInfo}
+                  onAddLineItem={addLineItem}
+                  onUpdateLineItem={updateLineItem}
+                  onRemoveLineItem={removeLineItem}
+                  onUpdateInvoice={updateInvoiceDetails}
+                />
+                
+                {showInvoiceActions && (
+                  <InvoiceActions
+                    invoice={invoice}
+                    onEdit={() => setShowInvoiceActions(false)}
+                    onDuplicate={() => handleDuplicateInvoice(invoice)}
+                    onDelete={() => {
+                      if (confirm('Are you sure you want to delete this invoice?')) {
+                        resetInvoice();
+                        setShowInvoiceActions(false);
+                      }
+                    }}
+                    onDownload={handleDownload}
+                    onShare={handleShare}
+                  />
+                )}
+              </div>
             ) : (
-                <InvoicePreview invoice={invoice} />
+              <InvoicePreview invoice={invoice} />
             )}
           </div>
         )}

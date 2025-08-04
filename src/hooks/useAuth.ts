@@ -124,6 +124,10 @@ export const useAuth = () => {
         console.error('Error signing out:', error);
         throw error;
       }
+      
+      // Clear all local storage
+      localStorage.clear();
+      
       // Force page reload to clear all state
       window.location.reload();
     } catch (error) {
