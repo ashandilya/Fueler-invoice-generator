@@ -10,7 +10,6 @@ import { Invoice, LineItem, Company, Client } from '../../types/invoice';
 interface InvoiceFormProps {
   invoice: Invoice;
   onUpdateInvoice: (updates: Partial<Invoice>) => void;
-  formErrors?: Record<string, string>;
   onUpdateCompany: (company: Company) => void;
   onUpdateClient: (client: Client) => void;
   onSaveInvoice: () => void;
@@ -24,7 +23,6 @@ interface InvoiceFormProps {
 export function InvoiceForm({
   invoice,
   onUpdateInvoice,
-  formErrors = {},
   onUpdateCompany,
   onUpdateClient,
   onSaveInvoice,
@@ -225,18 +223,6 @@ export function InvoiceForm({
         </div>
 
         <div className="space-y-4">
-          {formErrors.items && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-sm text-red-600">{formErrors.items}</p>
-            </div>
-          )}
-          
-          {formErrors.itemDescription && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-sm text-red-600">{formErrors.itemDescription}</p>
-            </div>
-          )}
-          
           {lineItems.map((item, index) => (
             <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-gray-50 rounded-xl">
               <div className="md:col-span-5">
@@ -260,14 +246,8 @@ export function InvoiceForm({
                 <Input
                   label={index === 0 ? "Rate" : ""}
                   type="number"
-                  value={item.rate.toString()}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const numericValue = value === '' ? 0 : parseFloat(value);
-                    if (!isNaN(numericValue)) {
-                      updateLineItem(item.id, 'rate', numericValue);
-                    }
-                  }}
+                  value={item.rate}
+                  onChange={(e) => updateLineItem(item.id, 'rate', Number(e.target.value))}
                   placeholder="0.00"
                 />
               </div>
