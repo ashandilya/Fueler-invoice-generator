@@ -180,6 +180,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               variant="outline"
               onClick={onCancel}
               disabled={loading}
+              className="min-w-[100px]"
             >
               Cancel
             </Button>
@@ -188,6 +189,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               icon={Save}
               loading={loading}
               disabled={loading}
+              className="min-w-[120px]"
             >
               {loading ? 'Saving...' : 'Save Client'}
             </Button>

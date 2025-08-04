@@ -251,7 +251,12 @@ function AppContent() {
 
   const handleEditInvoice = (invoiceToEdit: Invoice) => {
     // Load the invoice data into the form
-    setInvoice(invoiceToEdit);
+    resetInvoice();
+    setTimeout(() => {
+      updateInvoiceDetails(invoiceToEdit);
+      updateCompanyInfo(invoiceToEdit.company);
+      updateClientInfo(invoiceToEdit.client);
+    }, 0);
     setActiveTab('form');
     setShowInvoiceActions(false);
   };
