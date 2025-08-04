@@ -39,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
                 icon={Save}
                 variant="primary"
                 size="md"
+                className="min-w-[140px]"
               >
                 {isSaving ? 'Saving...' : 'Save Invoice'}
               </Button>

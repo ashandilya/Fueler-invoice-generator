@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Upload, X, LogOut } from 'lucide-react';
+import { Save, LogOut } from 'lucide-react';
 import { useCompanyProfile } from '../../hooks/useCompanyProfile';
 import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../ui/Input';
@@ -10,43 +10,35 @@ import { FileUpload } from '../common/FileUpload';
 export const CompanyProfileForm: React.FC = () => {
   const { profile, loading, error, updateProfile, uploadFile } = useCompanyProfile();
   const { signOut } = useAuth();
+  
+  // CRITICAL: Always show default data, even when profile is null
   const [formData, setFormData] = useState({
-    company_name: '',
-    company_address: '',
-    city: '',
-    state: '',
+    company_name: 'KiwisMedia Technologies Pvt. Ltd.',
+    company_address: 'HNO 238 , Bhati Abhoynagar, Nr\nVivekananda club rd, Agartala\nWard No - 1, P.O - Ramnagar,\nAgartala, West Tripura TR\n799002 IN.',
+    city: 'Agartala',
+    state: 'West Tripura',
     country: 'India',
-    company_logo_url: '',
-    digital_signature_url: '',
+    company_logo_url: '/fueler_logo.png',
+    digital_signature_url: '/signature.png.jpg',
     invoice_prefix: 'FLB',
   });
+  
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
 
+  // Update form data when profile loads, but keep defaults if profile is empty
   useEffect(() => {
     if (profile) {
       setFormData({
-        company_name: profile.company_name || '',
-        company_address: profile.company_address || '',
-        city: profile.city || '',
-        state: profile.state || '',
+        company_name: profile.company_name || 'KiwisMedia Technologies Pvt. Ltd.',
+        company_address: profile.company_address || 'HNO 238 , Bhati Abhoynagar, Nr\nVivekananda club rd, Agartala\nWard No - 1, P.O - Ramnagar,\nAgartala, West Tripura TR\n799002 IN.',
+        city: profile.city || 'Agartala',
+        state: profile.state || 'West Tripura',
         country: profile.country || 'India',
-        company_logo_url: profile.company_logo_url || '',
-        digital_signature_url: profile.digital_signature_url || '',
+        company_logo_url: profile.company_logo_url || '/fueler_logo.png',
+        digital_signature_url: profile.digital_signature_url || '/signature.png.jpg',
         invoice_prefix: profile.invoice_prefix || 'FLB',
-      });
-    } else {
-      // Load from initial company info if no profile exists
-      setFormData({
-        company_name: 'KiwisMedia Technologies Pvt. Ltd.',
-        company_address: 'HNO 238 , Bhati Abhoynagar, Nr\nVivekananda club rd, Agartala\nWard No - 1, P.O - Ramnagar,\nAgartala, West Tripura TR\n799002 IN.',
-        city: 'Agartala',
-        state: 'West Tripura',
-        country: 'India',
-        company_logo_url: '/fueler_logo.png',
-        digital_signature_url: '/signature.png.jpg',
-        invoice_prefix: 'FLB',
       });
     }
   }, [profile]);
@@ -108,7 +100,7 @@ export const CompanyProfileForm: React.FC = () => {
       alert('Company profile updated successfully!');
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert('Failed to save info.');
+      alert('Failed to save profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -125,14 +117,7 @@ export const CompanyProfileForm: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
+  // Show form even while loading, with default data
   return (
     <div className="max-w-5xl mx-auto">
       <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
@@ -154,6 +139,12 @@ export const CompanyProfileForm: React.FC = () => {
         {error && (
           <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl">
             <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+            <p className="text-sm text-blue-600">Loading profile data...</p>
           </div>
         )}
 
@@ -247,6 +238,7 @@ export const CompanyProfileForm: React.FC = () => {
               icon={Save}
               loading={saving}
               disabled={saving || uploadingLogo || uploadingSignature}
+              className="min-w-[140px]"
             >
               {saving ? 'Saving...' : 'Save Profile'}
             </Button>

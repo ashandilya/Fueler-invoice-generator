@@ -126,7 +126,22 @@ export const useAuth = () => {
       }
       
       // Clear all local storage
-      localStorage.clear();
+      // Clear all invoice and app-related data
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.includes('invoice') || 
+          key.includes('client') || 
+          key.includes('company') ||
+          key.startsWith('invoices') ||
+          key.startsWith('clients') ||
+          key === 'shared_invoices'
+        )) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
       
       // Force page reload to clear all state
       window.location.reload();

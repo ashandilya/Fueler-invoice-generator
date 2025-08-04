@@ -7,7 +7,6 @@ import { InvoiceForm } from './components/invoice/InvoiceForm';
 import { InvoicePreview } from './components/invoice/InvoicePreview';
 import { ClientList } from './components/clients/ClientList';
 import { ClientSelector } from './components/clients/ClientSelector';
-import { ClientInvoiceHistory } from './components/clients/ClientInvoiceHistory';
 import { PastInvoicesTab } from './components/invoice/PastInvoicesTab';
 import { CompanyProfileForm } from './components/profile/CompanyProfileForm';
 import { SaveConfirmationModal } from './components/common/SaveConfirmationModal';
@@ -18,7 +17,9 @@ import { useClientInvoices } from './hooks/useClientInvoices';
 import { useCompanyProfile } from './hooks/useCompanyProfile';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { generateInvoicePDF } from './utils/pdfGenerator';
+import { generateInvoiceNumber } from './utils/invoiceUtils';
 import { Client } from './types/client';
+import { Invoice } from './types/invoice';
 
 function App() {
   return (
@@ -50,7 +51,7 @@ function AppContent() {
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
 
   const { clients, loading: clientsLoading, addClient, updateClient, deleteClient } = useSupabaseClients();
-  const { addClientInvoice, getClientInvoiceDetails } = useClientInvoices();
+  const { addClientInvoice } = useClientInvoices();
 
   // Show loading state
   if (loading) {
@@ -65,54 +66,43 @@ function AppContent() {
     return <OnboardingForm onComplete={completeOnboarding} />;
   }
 
-  const validateInvoiceForm = (): boolean => {
-    return invoice.client.name.trim() !== '' && 
-           invoice.client.address.trim() !== '' && 
-           invoice.items.length > 0 &&
-           invoice.items.every(item => item.description.trim() !== '');
-  };
-
-  const handleSave = async () => {
-    // Enhanced validation to prevent saving blank invoices
+  // STRICT VALIDATION: Prevent saving blank invoices
+  const validateInvoiceForSave = (): { isValid: boolean; error: string } => {
     if (!invoice.client.name.trim()) {
-      alert('Please enter a client name before saving.');
-      setActiveTab('form');
-      return;
+      return { isValid: false, error: 'Please enter a client name before saving.' };
     }
     
     if (!invoice.client.address.trim()) {
-      alert('Please enter a client address before saving.');
-      setActiveTab('form');
-      return;
+      return { isValid: false, error: 'Please enter a client address before saving.' };
     }
     
     if (invoice.items.length === 0) {
-      alert('Please add at least one item before saving.');
-      setActiveTab('form');
-      return;
+      return { isValid: false, error: 'Please add at least one item before saving.' };
     }
     
     if (invoice.items.some(item => !item.description.trim())) {
-      alert('Please fill in descriptions for all items before saving.');
-      setActiveTab('form');
-      return;
+      return { isValid: false, error: 'Please fill in descriptions for all items before saving.' };
     }
     
     if (invoice.total <= 0) {
-      alert('Invoice total must be greater than zero.');
-      setActiveTab('form');
-      return;
+      return { isValid: false, error: 'Invoice total must be greater than zero.' };
     }
     
-    // Show save confirmation modal for client info if client data exists and not already a saved client
-    if ((invoice.client.name || invoice.client.address) && !selectedClient) {
-      setPendingSaveData({ type: 'client', data: invoice.client });
-      setShowSaveModal(true);
+    return { isValid: true, error: '' };
+  };
+
+  const handleSave = async () => {
+    // STRICT VALIDATION
+    const validation = validateInvoiceForSave();
+    if (!validation.isValid) {
+      alert(validation.error);
+      setActiveTab('form');
       return;
     }
     
     setIsSaving(true);
     try {
+      // Save to local storage
       const updatedInvoices = [...savedInvoices];
       const existingIndex = updatedInvoices.findIndex(inv => inv.id === invoice.id);
       
@@ -124,9 +114,9 @@ function AppContent() {
       
       setSavedInvoices(updatedInvoices);
       
-      // Also save to global localStorage for sharing
+      // CRITICAL: Save to global shared storage for shareable links
       const globalInvoices = JSON.parse(localStorage.getItem('shared_invoices') || '[]');
-      const globalExistingIndex = globalInvoices.findIndex(inv => inv.id === invoice.id);
+      const globalExistingIndex = globalInvoices.findIndex((inv: Invoice) => inv.id === invoice.id);
       
       if (globalExistingIndex >= 0) {
         globalInvoices[globalExistingIndex] = invoice;
@@ -143,31 +133,31 @@ function AppContent() {
       
       setShowInvoiceActions(true);
       
-      // Clear the form after successful save
+      // CLEAR FORM: Reset after 3 seconds
       setTimeout(() => {
         resetInvoice();
         setSelectedClient(null);
         setShowInvoiceActions(false);
-      }, 3000); // Show success message for 3 seconds, then clear
+      }, 3000);
       
-      // Simulate save delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.error('Error saving invoice:', error);
+      alert('Failed to save invoice. Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleShare = () => {
-    // Validate before sharing
-    if (!invoice.client.name.trim() || !invoice.client.address.trim() || invoice.items.length === 0) {
-      alert('Please complete the invoice before sharing (client name, address, and at least one item required).');
+    // STRICT VALIDATION for sharing
+    const validation = validateInvoiceForSave();
+    if (!validation.isValid) {
+      alert(validation.error);
       setActiveTab('form');
       return;
     }
     
-    // Save to both local and global storage for sharing
+    // Auto-save before sharing
     const updatedInvoices = [...savedInvoices];
     const existingIndex = updatedInvoices.findIndex(inv => inv.id === invoice.id);
     
@@ -179,9 +169,9 @@ function AppContent() {
     
     setSavedInvoices(updatedInvoices);
     
-    // Save to global shared storage
+    // CRITICAL: Save to global shared storage
     const globalInvoices = JSON.parse(localStorage.getItem('shared_invoices') || '[]');
-    const globalExistingIndex = globalInvoices.findIndex(inv => inv.id === invoice.id);
+    const globalExistingIndex = globalInvoices.findIndex((inv: Invoice) => inv.id === invoice.id);
     
     if (globalExistingIndex >= 0) {
       globalInvoices[globalExistingIndex] = invoice;
@@ -200,35 +190,11 @@ function AppContent() {
   };
 
   const handleDownload = async () => {
-    // Enhanced validation for download
-    if (!invoice.client.name.trim()) {
-      alert('Please enter a client name before downloading.');
+    // STRICT VALIDATION for download
+    const validation = validateInvoiceForSave();
+    if (!validation.isValid) {
+      alert(validation.error);
       setActiveTab('form');
-      return;
-    }
-    
-    if (!invoice.client.address.trim()) {
-      alert('Please enter a client address before downloading.');
-      setActiveTab('form');
-      return;
-    }
-    
-    if (invoice.items.length === 0) {
-      alert('Please add at least one item before downloading.');
-      setActiveTab('form');
-      return;
-    }
-    
-    if (invoice.items.some(item => !item.description.trim())) {
-      alert('Please fill in descriptions for all items before downloading.');
-      setActiveTab('form');
-      return;
-    }
-    
-    // Show save confirmation modal for client info if client data exists and not already a saved client
-    if ((invoice.client.name || invoice.client.address) && !selectedClient) {
-      setPendingSaveData({ type: 'client', data: invoice.client });
-      setShowSaveModal(true);
       return;
     }
     
@@ -272,35 +238,11 @@ function AppContent() {
     }
   };
 
-  const handleCompanyInfoChange = (companyInfo: any) => {
-    updateCompanyInfo(companyInfo);
-    if (companyInfo.name || companyInfo.address) {
-      setPendingSaveData({ type: 'company', data: companyInfo });
-      setShowSaveModal(true);
-    }
-  };
-
-  const handleClientInfoChange = (clientInfo: any) => {
-    updateClientInfo(clientInfo);
-    if (clientInfo.name || clientInfo.address) {
-      setPendingSaveData({ type: 'client', data: clientInfo });
-      setShowSaveModal(true);
-    }
-  };
-
   const handleSaveConfirmation = async () => {
     if (!pendingSaveData) return;
 
     try {
-      if (pendingSaveData.type === 'company') {
-        // Save to company profile
-        try {
-          console.log('Company data to save:', pendingSaveData.data);
-        } catch (error) {
-          console.error('Error saving company info:', error);
-          alert('Failed to save company info.');
-        }
-      } else if (pendingSaveData.type === 'client') {
+      if (pendingSaveData.type === 'client') {
         // Save to clients
         try {
           const clientData = {
@@ -316,7 +258,7 @@ function AppContent() {
           await addClient(clientData);
         } catch (error) {
           console.error('Error saving client info:', error);
-          alert('Failed to save info.');
+          alert('Failed to save client info.');
         }
       }
     } catch (error) {
@@ -325,18 +267,6 @@ function AppContent() {
     } finally {
       setShowSaveModal(false);
       setPendingSaveData(null);
-      
-      // Continue with the original action after saving
-      if (pendingSaveData?.type === 'client') {
-        // If we were trying to save, continue with save
-        if (isSaving) {
-          handleSave();
-        }
-        // If we were trying to download, continue with download
-        if (isDownloading) {
-          handleDownload();
-        }
-      }
     }
   };
 
@@ -364,7 +294,13 @@ function AppContent() {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    setInvoice(duplicatedInvoice);
+    
+    resetInvoice();
+    setTimeout(() => {
+      updateInvoiceDetails(duplicatedInvoice);
+      updateCompanyInfo(duplicatedInvoice.company);
+      updateClientInfo(duplicatedInvoice.client);
+    }, 0);
     setActiveTab('form');
     setShowInvoiceActions(false);
   };
@@ -373,11 +309,46 @@ function AppContent() {
     if (confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
       const updatedInvoices = savedInvoices.filter(inv => inv.id !== invoiceId);
       setSavedInvoices(updatedInvoices);
+      
+      // Also remove from global shared storage
+      const globalInvoices = JSON.parse(localStorage.getItem('shared_invoices') || '[]');
+      const filteredGlobal = globalInvoices.filter((inv: Invoice) => inv.id !== invoiceId);
+      localStorage.setItem('shared_invoices', JSON.stringify(filteredGlobal));
     }
   };
 
-  // Get past invoices for selected client
-  const clientInvoices = selectedClient ? getClientInvoiceDetails(selectedClient.id) : [];
+  const handleShareFromPastInvoices = (invoiceToShare: Invoice) => {
+    // Ensure invoice is in global shared storage
+    const globalInvoices = JSON.parse(localStorage.getItem('shared_invoices') || '[]');
+    const existingIndex = globalInvoices.findIndex((inv: Invoice) => inv.id === invoiceToShare.id);
+    
+    if (existingIndex >= 0) {
+      globalInvoices[existingIndex] = invoiceToShare;
+    } else {
+      globalInvoices.push(invoiceToShare);
+    }
+    
+    localStorage.setItem('shared_invoices', JSON.stringify(globalInvoices));
+    
+    const shareUrl = `${window.location.origin}/invoice/${invoiceToShare.id}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('Invoice link copied to clipboard!');
+    }).catch(() => {
+      prompt('Copy this link to share your invoice:', shareUrl);
+    });
+  };
+
+  const handleDownloadFromPastInvoices = async (invoiceToDownload: Invoice) => {
+    setIsDownloading(true);
+    try {
+      await generateInvoicePDF(invoiceToDownload);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
   
   return (
     <div className="min-h-screen bg-gray-50 relative">
@@ -386,158 +357,158 @@ function AppContent() {
       
       {/* Main app content - always rendered but blurred when not authenticated */}
       <div className={`transition-all duration-300 ${!user ? 'blur-sm pointer-events-none' : ''}`}>
-      <Header
-        onSave={handleSave}
-        onDownload={handleDownload}
-        onShare={handleShare}
-        onPrint={handlePrint}
-        onReset={handleReset}
-        isSaving={isSaving}
-        isDownloading={isDownloading}
-        showSaveButton={activeTab === 'form'}
-      />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Tab Navigation */}
-        <div className="mb-12">
-          <div className="border-b border-gray-100">
-            <nav className="-mb-px flex space-x-12">
-              <button
-                onClick={() => setActiveTab('form')}
-                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
-                  activeTab === 'form'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
-                }`}
-              >
-                Create Invoice
-              </button>
-              <button
-                onClick={() => setActiveTab('preview')}
-                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
-                  activeTab === 'preview'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
-                }`}
-              >
-                Preview
-              </button>
-              <button
-                onClick={() => setActiveTab('clients')}
-                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
-                  activeTab === 'clients'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
-                }`}
-              >
-                Clients
-              </button>
-              <button
-                onClick={() => setActiveTab('invoices')}
-                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
-                  activeTab === 'invoices'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
-                }`}
-              >
-                Past Invoices
-              </button>
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
-                  activeTab === 'profile'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
-                }`}
-              >
-                Profile
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Content */}
-        {activeTab === 'profile' ? (
-          <CompanyProfileForm />
-        ) : activeTab === 'invoices' ? (
-          <PastInvoicesTab
-            invoices={savedInvoices}
-            onEdit={handleEditInvoice}
-            onDuplicate={handleDuplicateInvoice}
-            onDelete={handleDeleteInvoice}
-            onDownload={handleDownload}
-            onShare={handleShare}
-          />
-        ) : activeTab === 'clients' ? (
-          <ClientList
-            clients={clients}
-            onAddClient={addClient}
-            onUpdateClient={updateClient}
-            onDeleteClient={deleteClient}
-            loading={clientsLoading}
-          />
-        ) : (
-          <div className="max-w-5xl mx-auto">
-            {activeTab === 'form' ? (
-              <div className="space-y-8">
-                {/* Client Selector */}
-                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-                  <ClientSelector
-                    clients={clients}
-                    selectedClient={selectedClient}
-                    onClientSelect={handleClientSelect}
-                  />
-                </div>
-                
-                {/* Invoice Form */}
-                <InvoiceForm
-                  invoice={invoice}
-                  onUpdateCompany={updateCompanyInfo}
-                  onUpdateClient={updateClientInfo}
-                  onAddLineItem={addLineItem}
-                  onUpdateLineItem={updateLineItem}
-                  onRemoveLineItem={removeLineItem}
-                  onUpdateInvoice={updateInvoiceDetails}
-                />
-                
-                {showInvoiceActions && (
-                  <InvoiceActions
-                    invoice={invoice}
-                    onEdit={() => setShowInvoiceActions(false)}
-                    onDuplicate={() => handleDuplicateInvoice(invoice)}
-                    onDelete={() => {
-                      if (confirm('Are you sure you want to delete this invoice?')) {
-                        resetInvoice();
-                        setShowInvoiceActions(false);
-                      }
-                    }}
-                    onDownload={handleDownload}
-                    onShare={handleShare}
-                  />
-                )}
-              </div>
-            ) : (
-              <InvoicePreview invoice={invoice} />
-            )}
-          </div>
-        )}
-        
-        <SaveConfirmationModal
-          isOpen={showSaveModal}
-          onClose={() => {
-            setShowSaveModal(false);
-            setPendingSaveData(null);
-          }}
-          onConfirm={handleSaveConfirmation}
-          loading={isSaving}
-          title={pendingSaveData?.type === 'company' ? 'Save Company Information' : 'Save Client Information'}
-          message={
-            pendingSaveData?.type === 'company' 
-              ? 'Would you like to save this company information to your profile for future use?'
-              : 'Would you like to save this client information for future invoices?'
-          }
+        <Header
+          onSave={handleSave}
+          onDownload={handleDownload}
+          onShare={handleShare}
+          onPrint={handlePrint}
+          onReset={handleReset}
+          isSaving={isSaving}
+          isDownloading={isDownloading}
+          showSaveButton={activeTab === 'form'}
         />
-      </main>
+        
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Tab Navigation */}
+          <div className="mb-12">
+            <div className="border-b border-gray-100">
+              <nav className="-mb-px flex space-x-12">
+                <button
+                  onClick={() => setActiveTab('form')}
+                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                    activeTab === 'form'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
+                  }`}
+                >
+                  Create Invoice
+                </button>
+                <button
+                  onClick={() => setActiveTab('preview')}
+                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                    activeTab === 'preview'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
+                  }`}
+                >
+                  Preview
+                </button>
+                <button
+                  onClick={() => setActiveTab('clients')}
+                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                    activeTab === 'clients'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
+                  }`}
+                >
+                  Clients
+                </button>
+                <button
+                  onClick={() => setActiveTab('invoices')}
+                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                    activeTab === 'invoices'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
+                  }`}
+                >
+                  Past Invoices
+                </button>
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                    activeTab === 'profile'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
+                  }`}
+                >
+                  Profile
+                </button>
+              </nav>
+            </div>
+          </div>
+
+          {/* Content */}
+          {activeTab === 'profile' ? (
+            <CompanyProfileForm />
+          ) : activeTab === 'invoices' ? (
+            <PastInvoicesTab
+              invoices={savedInvoices}
+              onEdit={handleEditInvoice}
+              onDuplicate={handleDuplicateInvoice}
+              onDelete={handleDeleteInvoice}
+              onDownload={handleDownloadFromPastInvoices}
+              onShare={handleShareFromPastInvoices}
+            />
+          ) : activeTab === 'clients' ? (
+            <ClientList
+              clients={clients}
+              onAddClient={addClient}
+              onUpdateClient={updateClient}
+              onDeleteClient={deleteClient}
+              loading={clientsLoading}
+            />
+          ) : (
+            <div className="max-w-5xl mx-auto">
+              {activeTab === 'form' ? (
+                <div className="space-y-8">
+                  {/* Client Selector */}
+                  <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
+                    <ClientSelector
+                      clients={clients}
+                      selectedClient={selectedClient}
+                      onClientSelect={handleClientSelect}
+                    />
+                  </div>
+                  
+                  {/* Invoice Form */}
+                  <InvoiceForm
+                    invoice={invoice}
+                    onUpdateCompany={updateCompanyInfo}
+                    onUpdateClient={updateClientInfo}
+                    onAddLineItem={addLineItem}
+                    onUpdateLineItem={updateLineItem}
+                    onRemoveLineItem={removeLineItem}
+                    onUpdateInvoice={updateInvoiceDetails}
+                  />
+                  
+                  {showInvoiceActions && (
+                    <InvoiceActions
+                      invoice={invoice}
+                      onEdit={() => setShowInvoiceActions(false)}
+                      onDuplicate={() => handleDuplicateInvoice(invoice)}
+                      onDelete={() => {
+                        if (confirm('Are you sure you want to delete this invoice?')) {
+                          resetInvoice();
+                          setShowInvoiceActions(false);
+                        }
+                      }}
+                      onDownload={handleDownload}
+                      onShare={handleShare}
+                    />
+                  )}
+                </div>
+              ) : (
+                <InvoicePreview invoice={invoice} />
+              )}
+            </div>
+          )}
+          
+          <SaveConfirmationModal
+            isOpen={showSaveModal}
+            onClose={() => {
+              setShowSaveModal(false);
+              setPendingSaveData(null);
+            }}
+            onConfirm={handleSaveConfirmation}
+            loading={isSaving}
+            title={pendingSaveData?.type === 'company' ? 'Save Company Information' : 'Save Client Information'}
+            message={
+              pendingSaveData?.type === 'company' 
+                ? 'Would you like to save this company information to your profile for future use?'
+                : 'Would you like to save this client information for future invoices?'
+            }
+          />
+        </main>
       </div>
     </div>
   );

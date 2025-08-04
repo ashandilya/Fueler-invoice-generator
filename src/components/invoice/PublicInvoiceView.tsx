@@ -18,61 +18,62 @@ export const PublicInvoiceView: React.FC = () => {
       try {
         let foundInvoice: Invoice | null = null;
         
-        // First check global shared invoices storage
-        const sharedInvoices = localStorage.getItem('shared_invoices');
-        if (sharedInvoices) {
-          const invoices = JSON.parse(sharedInvoices, (key, value) => {
-            if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
-              return new Date(value);
-            }
-            return value;
-          });
-          foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
-        }
+        console.log('Looking for invoice ID:', invoiceId);
         
-        // If not found, check main invoices storage
-        if (!foundInvoice) {
-          const savedInvoices = localStorage.getItem('invoices');
-          if (savedInvoices) {
-            const invoices = JSON.parse(savedInvoices, (key, value) => {
-              if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
-                return new Date(value);
-              }
-              return value;
-            });
-            foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
+        // CRITICAL: Search all possible storage locations
+        const storageKeys = [
+          'shared_invoices',  // Primary shared storage
+          'invoices',         // Main storage
+        ];
+        
+        // Add user-specific keys
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('invoices_') || key.includes('invoice'))) {
+            storageKeys.push(key);
           }
         }
         
-        // If still not found, check all localStorage keys for user-specific data
-        if (!foundInvoice) {
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.startsWith('invoices_') || key === 'invoices')) {
-              try {
-                const userInvoices = localStorage.getItem(key);
-                if (userInvoices) {
-                  const invoices = JSON.parse(userInvoices, (key, value) => {
-                    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
-                      return new Date(value);
-                    }
-                    return value;
-                  });
-                  if (Array.isArray(invoices)) {
-                    foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
-                    if (foundInvoice) break;
-                  }
+        console.log('Searching storage keys:', storageKeys);
+        
+        for (const key of storageKeys) {
+          try {
+            const data = localStorage.getItem(key);
+            if (data) {
+              console.log(`Checking key: ${key}`);
+              const invoices = JSON.parse(data, (key, value) => {
+                // Date reviver function
+                if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
+                  return new Date(value);
                 }
-              } catch (e) {
-                continue;
+                return value;
+              });
+              
+              if (Array.isArray(invoices)) {
+                console.log(`Found ${invoices.length} invoices in ${key}`);
+                foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
+                if (foundInvoice) {
+                  console.log('Invoice found in:', key);
+                  break;
+                }
+              } else if (invoices && typeof invoices === 'object' && invoices.id === invoiceId) {
+                // Handle single invoice object
+                foundInvoice = invoices;
+                console.log('Single invoice found in:', key);
+                break;
               }
             }
+          } catch (parseError) {
+            console.warn(`Error parsing ${key}:`, parseError);
+            continue;
           }
         }
         
         if (foundInvoice) {
+          console.log('Successfully loaded invoice:', foundInvoice.invoiceNumber);
           setInvoice(foundInvoice);
         } else {
+          console.error('Invoice not found in any storage location');
           setError('Invoice not found. The invoice may have been deleted or the link is invalid.');
         }
       } catch (err) {
