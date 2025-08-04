@@ -116,6 +116,12 @@ function AppContent() {
   };
 
   const handleShare = () => {
+    // First save the invoice to make it shareable
+    if (!savedInvoices.find(inv => inv.id === invoice.id)) {
+      const updatedInvoices = [...savedInvoices, invoice];
+      setSavedInvoices(updatedInvoices);
+    }
+    
     const shareUrl = `${window.location.origin}/invoice/${invoice.id}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       alert('Invoice link copied to clipboard!');

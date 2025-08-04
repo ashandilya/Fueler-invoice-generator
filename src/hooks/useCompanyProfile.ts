@@ -29,7 +29,40 @@ export const useCompanyProfile = () => {
         throw error;
       }
 
-      setProfile(data || null);
+      if (data) {
+        setProfile(data);
+      } else {
+        // Create default profile if none exists
+        const defaultProfile = {
+          user_id: user.id,
+          company_name: 'KiwisMedia Technologies Pvt. Ltd.',
+          company_address: 'HNO 238 , Bhati Abhoynagar, Nr\nVivekananda club rd, Agartala\nWard No - 1, P.O - Ramnagar,\nAgartala, West Tripura TR\n799002 IN.',
+          city: 'Agartala',
+          state: 'West Tripura',
+          country: 'India',
+          company_logo_url: '/fueler_logo.png',
+          digital_signature_url: '/signature.png.jpg',
+          invoice_prefix: 'FLB',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        try {
+          const { data: newProfile, error: createError } = await supabase
+            .from('company_profiles')
+            .insert(defaultProfile)
+            .select()
+            .single();
+            
+          if (!createError && newProfile) {
+            setProfile(newProfile);
+          } else {
+            setProfile(defaultProfile);
+          }
+        } catch (createErr) {
+          setProfile(defaultProfile);
+        }
+      }
     } catch (err) {
       console.error('Error fetching company profile:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch profile');

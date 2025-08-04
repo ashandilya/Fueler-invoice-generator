@@ -16,7 +16,10 @@ export const PublicInvoiceView: React.FC = () => {
   useEffect(() => {
     const loadInvoice = () => {
       try {
-        // Try to load from localStorage first
+        // Try to load from localStorage with all possible keys
+        let foundInvoice: Invoice | null = null;
+        
+        // Check main invoices storage
         const savedInvoices = localStorage.getItem('invoices');
         if (savedInvoices) {
           const invoices = JSON.parse(savedInvoices, (key, value) => {
@@ -25,13 +28,35 @@ export const PublicInvoiceView: React.FC = () => {
             }
             return value;
           });
-          
-          const foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
-          if (foundInvoice) {
-            setInvoice(foundInvoice);
-          } else {
-            setError('Invoice not found');
+          foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
+        }
+        
+        // If not found, check all localStorage keys for user-specific data
+        if (!foundInvoice) {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('invoices_')) {
+              try {
+                const userInvoices = localStorage.getItem(key);
+                if (userInvoices) {
+                  const invoices = JSON.parse(userInvoices, (key, value) => {
+                    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
+                      return new Date(value);
+                    }
+                    return value;
+                  });
+                  foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
+                  if (foundInvoice) break;
+                }
+              } catch (e) {
+                continue;
+              }
+            }
           }
+        }
+        
+        if (foundInvoice) {
+          setInvoice(foundInvoice);
         } else {
           setError('Invoice not found');
         }

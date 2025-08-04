@@ -36,6 +36,18 @@ export const CompanyProfileForm: React.FC = () => {
         digital_signature_url: profile.digital_signature_url || '',
         invoice_prefix: profile.invoice_prefix || 'FLB',
       });
+    } else {
+      // Load from initial company info if no profile exists
+      setFormData({
+        company_name: 'KiwisMedia Technologies Pvt. Ltd.',
+        company_address: 'HNO 238 , Bhati Abhoynagar, Nr\nVivekananda club rd, Agartala\nWard No - 1, P.O - Ramnagar,\nAgartala, West Tripura TR\n799002 IN.',
+        city: 'Agartala',
+        state: 'West Tripura',
+        country: 'India',
+        company_logo_url: '/fueler_logo.png',
+        digital_signature_url: '/signature.png.jpg',
+        invoice_prefix: 'FLB',
+      });
     }
   }, [profile]);
 
