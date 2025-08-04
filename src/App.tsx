@@ -106,6 +106,13 @@ function AppContent() {
       
       setShowInvoiceActions(true);
       
+      // Clear the form after successful save
+      setTimeout(() => {
+        resetInvoice();
+        setSelectedClient(null);
+        setShowInvoiceActions(false);
+      }, 3000); // Show success message for 3 seconds, then clear
+      
       // Simulate save delay
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {

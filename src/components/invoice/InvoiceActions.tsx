@@ -25,7 +25,7 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-xl font-bold text-green-800">Invoice Saved Successfully!</h3>
-          <p className="text-sm text-green-600 mt-1">Invoice #{invoice.invoiceNumber} has been saved to your dashboard.</p>
+          <p className="text-sm text-green-600 mt-1">Invoice #{invoice.invoiceNumber} has been saved. Form will clear in a moment...</p>
         </div>
       </div>
       
