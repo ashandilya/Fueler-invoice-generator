@@ -16,13 +16,12 @@ export const PublicInvoiceView: React.FC = () => {
   useEffect(() => {
     const loadInvoice = () => {
       try {
-        // Try to load from localStorage with all possible keys
         let foundInvoice: Invoice | null = null;
         
-        // Check main invoices storage
-        const savedInvoices = localStorage.getItem('invoices');
-        if (savedInvoices) {
-          const invoices = JSON.parse(savedInvoices, (key, value) => {
+        // First check global shared invoices storage
+        const sharedInvoices = localStorage.getItem('shared_invoices');
+        if (sharedInvoices) {
+          const invoices = JSON.parse(sharedInvoices, (key, value) => {
             if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
               return new Date(value);
             }
@@ -31,11 +30,25 @@ export const PublicInvoiceView: React.FC = () => {
           foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
         }
         
-        // If not found, check all localStorage keys for user-specific data
+        // If not found, check main invoices storage
+        if (!foundInvoice) {
+          const savedInvoices = localStorage.getItem('invoices');
+          if (savedInvoices) {
+            const invoices = JSON.parse(savedInvoices, (key, value) => {
+              if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
+                return new Date(value);
+              }
+              return value;
+            });
+            foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
+          }
+        }
+        
+        // If still not found, check all localStorage keys for user-specific data
         if (!foundInvoice) {
           for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('invoices_')) {
+            if (key && (key.startsWith('invoices_') || key === 'invoices')) {
               try {
                 const userInvoices = localStorage.getItem(key);
                 if (userInvoices) {
@@ -45,8 +58,10 @@ export const PublicInvoiceView: React.FC = () => {
                     }
                     return value;
                   });
-                  foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
-                  if (foundInvoice) break;
+                  if (Array.isArray(invoices)) {
+                    foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
+                    if (foundInvoice) break;
+                  }
                 }
               } catch (e) {
                 continue;
@@ -58,7 +73,7 @@ export const PublicInvoiceView: React.FC = () => {
         if (foundInvoice) {
           setInvoice(foundInvoice);
         } else {
-          setError('Invoice not found');
+          setError('Invoice not found. The invoice may have been deleted or the link is invalid.');
         }
       } catch (err) {
         console.error('Error loading invoice:', err);

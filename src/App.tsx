@@ -73,9 +73,34 @@ function AppContent() {
   };
 
   const handleSave = async () => {
-    // Validate form first
-    if (!validateInvoiceForm()) {
-      alert('Please fill in all required fields: Client name, address, and at least one item with description.');
+    // Enhanced validation to prevent saving blank invoices
+    if (!invoice.client.name.trim()) {
+      alert('Please enter a client name before saving.');
+      setActiveTab('form');
+      return;
+    }
+    
+    if (!invoice.client.address.trim()) {
+      alert('Please enter a client address before saving.');
+      setActiveTab('form');
+      return;
+    }
+    
+    if (invoice.items.length === 0) {
+      alert('Please add at least one item before saving.');
+      setActiveTab('form');
+      return;
+    }
+    
+    if (invoice.items.some(item => !item.description.trim())) {
+      alert('Please fill in descriptions for all items before saving.');
+      setActiveTab('form');
+      return;
+    }
+    
+    if (invoice.total <= 0) {
+      alert('Invoice total must be greater than zero.');
+      setActiveTab('form');
       return;
     }
     
@@ -98,6 +123,18 @@ function AppContent() {
       }
       
       setSavedInvoices(updatedInvoices);
+      
+      // Also save to global localStorage for sharing
+      const globalInvoices = JSON.parse(localStorage.getItem('shared_invoices') || '[]');
+      const globalExistingIndex = globalInvoices.findIndex(inv => inv.id === invoice.id);
+      
+      if (globalExistingIndex >= 0) {
+        globalInvoices[globalExistingIndex] = invoice;
+      } else {
+        globalInvoices.push(invoice);
+      }
+      
+      localStorage.setItem('shared_invoices', JSON.stringify(globalInvoices));
       
       // If a client is selected, associate this invoice with the client
       if (selectedClient) {
@@ -123,11 +160,36 @@ function AppContent() {
   };
 
   const handleShare = () => {
-    // First save the invoice to make it shareable
-    if (!savedInvoices.find(inv => inv.id === invoice.id)) {
-      const updatedInvoices = [...savedInvoices, invoice];
-      setSavedInvoices(updatedInvoices);
+    // Validate before sharing
+    if (!invoice.client.name.trim() || !invoice.client.address.trim() || invoice.items.length === 0) {
+      alert('Please complete the invoice before sharing (client name, address, and at least one item required).');
+      setActiveTab('form');
+      return;
     }
+    
+    // Save to both local and global storage for sharing
+    const updatedInvoices = [...savedInvoices];
+    const existingIndex = updatedInvoices.findIndex(inv => inv.id === invoice.id);
+    
+    if (existingIndex >= 0) {
+      updatedInvoices[existingIndex] = invoice;
+    } else {
+      updatedInvoices.push(invoice);
+    }
+    
+    setSavedInvoices(updatedInvoices);
+    
+    // Save to global shared storage
+    const globalInvoices = JSON.parse(localStorage.getItem('shared_invoices') || '[]');
+    const globalExistingIndex = globalInvoices.findIndex(inv => inv.id === invoice.id);
+    
+    if (globalExistingIndex >= 0) {
+      globalInvoices[globalExistingIndex] = invoice;
+    } else {
+      globalInvoices.push(invoice);
+    }
+    
+    localStorage.setItem('shared_invoices', JSON.stringify(globalInvoices));
     
     const shareUrl = `${window.location.origin}/invoice/${invoice.id}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -138,9 +200,28 @@ function AppContent() {
   };
 
   const handleDownload = async () => {
-    // Validate form first
-    if (!validateInvoiceForm()) {
-      alert('Please fill in all required fields: Client name, address, and at least one item with description.');
+    // Enhanced validation for download
+    if (!invoice.client.name.trim()) {
+      alert('Please enter a client name before downloading.');
+      setActiveTab('form');
+      return;
+    }
+    
+    if (!invoice.client.address.trim()) {
+      alert('Please enter a client address before downloading.');
+      setActiveTab('form');
+      return;
+    }
+    
+    if (invoice.items.length === 0) {
+      alert('Please add at least one item before downloading.');
+      setActiveTab('form');
+      return;
+    }
+    
+    if (invoice.items.some(item => !item.description.trim())) {
+      alert('Please fill in descriptions for all items before downloading.');
+      setActiveTab('form');
       return;
     }
     

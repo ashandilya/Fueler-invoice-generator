@@ -28,13 +28,24 @@ export const PastInvoicesTab: React.FC<PastInvoicesTabProps> = ({
     switch (status) {
       case 'paid':
         return 'bg-green-100 text-green-800 border-green-200';
+    // Save to global shared storage for sharing
+    const globalInvoices = JSON.parse(localStorage.getItem('shared_invoices') || '[]');
+    const globalExistingIndex = globalInvoices.findIndex(inv => inv.id === invoice.id);
+    
+    if (globalExistingIndex >= 0) {
+      globalInvoices[globalExistingIndex] = invoice;
+    } else {
+      globalInvoices.push(invoice);
+    }
+    
+    localStorage.setItem('shared_invoices', JSON.stringify(globalInvoices));
+    
       case 'sent':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'overdue':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
   };
 
   if (invoices.length === 0) {
