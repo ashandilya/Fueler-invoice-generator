@@ -109,14 +109,19 @@ export const useSupabaseClients = () => {
     try {
       setError(null);
       
-      // Prepare data with proper field mapping
-      const dbClientData = {
-        ...clientData,
-        vendorName: clientData.name, // Map name to vendor_name
-        businessName: clientData.businessName || clientData.name, // Use businessName or fallback to name
+      // Prepare data for database insertion
+      const dbClient = {
+        user_id: user.id,
+        vendor_name: clientData.name,
+        business_name: clientData.businessName || clientData.name,
+        email: clientData.email,
+        phone: clientData.phone || null,
+        gstin: clientData.gstin || null,
+        billing_address: clientData.billingAddress,
+        city: clientData.city || null,
+        state: clientData.state || null,
+        country: clientData.country || 'India',
       };
-      
-      const dbClient = convertToDbClient(dbClientData, user.id);
       
       console.log('Converted to DB format:', dbClient);
 
@@ -144,7 +149,22 @@ export const useSupabaseClients = () => {
       return newClient;
     } catch (err) {
       console.error('Error adding client:', err);
-      setError(err instanceof Error ? err.message : 'Failed to add client');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to add client';
+      if (err instanceof Error) {
+        if (err.message.includes('duplicate key')) {
+          errorMessage = 'A client with this email already exists';
+        } else if (err.message.includes('violates check constraint')) {
+          errorMessage = 'Please check that all required fields are filled correctly';
+        } else if (err.message.includes('permission denied') || err.message.includes('RLS')) {
+          errorMessage = 'Permission denied. Please try logging out and back in.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
       throw err;
     }
   }, [user, clients]);
@@ -166,8 +186,10 @@ export const useSupabaseClients = () => {
     try {
       setError(null);
 
-      // Map frontend fields to database fields
-      const dbUpdates: any = {};
+      // Prepare database updates with proper field mapping
+      const dbUpdates: any = {
+        updated_at: new Date().toISOString(),
+      };
       
       if (updates.name !== undefined) {
         dbUpdates.vendor_name = updates.name;
@@ -180,30 +202,27 @@ export const useSupabaseClients = () => {
         dbUpdates.email = updates.email;
       }
       if (updates.phone !== undefined) {
-        dbUpdates.phone = updates.phone;
+        dbUpdates.phone = updates.phone || null;
       }
       if (updates.gstin !== undefined) {
-        dbUpdates.gstin = updates.gstin;
+        dbUpdates.gstin = updates.gstin || null;
       }
       if (updates.billingAddress !== undefined) {
         dbUpdates.billing_address = updates.billingAddress;
       }
       if (updates.city !== undefined) {
-        dbUpdates.city = updates.city;
+        dbUpdates.city = updates.city || null;
       }
       if (updates.state !== undefined) {
-        dbUpdates.state = updates.state;
+        dbUpdates.state = updates.state || null;
       }
       if (updates.country !== undefined) {
-        dbUpdates.country = updates.country;
+        dbUpdates.country = updates.country || 'India';
       }
 
       const { error } = await supabase
         .from('vendors')
-        .update({
-          ...dbUpdates,
-          updated_at: new Date().toISOString(),
-        })
+        .update(dbUpdates)
         .eq('vendor_id', id)
         .eq('user_id', user.id);
 
@@ -224,7 +243,22 @@ export const useSupabaseClients = () => {
       localStorage.setItem(`clients_${user.id}`, JSON.stringify(updatedClients));
     } catch (err) {
       console.error('Error updating client:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update client');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to update client';
+      if (err instanceof Error) {
+        if (err.message.includes('duplicate key')) {
+          errorMessage = 'A client with this email already exists';
+        } else if (err.message.includes('violates check constraint')) {
+          errorMessage = 'Please check that all required fields are filled correctly';
+        } else if (err.message.includes('permission denied') || err.message.includes('RLS')) {
+          errorMessage = 'Permission denied. Please try logging out and back in.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
       throw err;
     }
   }, [user, clients]);

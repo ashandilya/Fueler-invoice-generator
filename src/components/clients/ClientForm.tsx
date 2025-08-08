@@ -79,10 +79,17 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
     setIsSubmitting(true);
     try {
+      console.log('Submitting client form with data:', formData);
       await onSubmit(formData);
+      console.log('Client form submitted successfully');
     } catch (error) {
       console.error('Form submission error:', error);
-      // Form stays open on error
+      
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save client';
+      alert(`Error: ${errorMessage}`);
+      
+      // Form stays open on error so user can fix issues
     } finally {
       setIsSubmitting(false);
     }

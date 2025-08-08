@@ -100,9 +100,7 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin.includes('localhost') 
-            ? `${window.location.origin}/`
-            : 'https://fueler-invoice-generator.netlify.app/'
+          redirectTo: window.location.origin
         }
       });
       
