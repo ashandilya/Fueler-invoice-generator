@@ -33,6 +33,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -70,17 +71,21 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('ClientForm: Form submitted with data:', formData);
+    if (isSubmitting) return; // Prevent double submission
     
     if (!validateForm()) {
-      console.log('ClientForm: Validation failed');
       return;
     }
 
-    console.log('ClientForm: Validation passed, calling onSubmit');
-    
-    await onSubmit(formData);
-    console.log('ClientForm: onSubmit completed');
+    setIsSubmitting(true);
+    try {
+      await onSubmit(formData);
+    } catch (error) {
+      console.error('Form submission error:', error);
+      // Form stays open on error
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -90,10 +95,12 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     }
   };
 
+  const actualLoading = loading || isSubmitting;
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-0">
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-3 sm:space-y-0">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h2>
             <p className="text-sm text-gray-600 mt-1">Enter client details for future invoices</p>
@@ -104,20 +111,21 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             variant="ghost"
             size="sm"
             icon={X}
-            className="self-end sm:self-auto"
+            disabled={actualLoading}
           >
             Close
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <Input
               label="Client Name *"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               error={errors.name}
               placeholder="Enter client name"
+              disabled={actualLoading}
             />
             
             <Input
@@ -127,6 +135,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               onChange={(e) => handleInputChange('email', e.target.value)}
               error={errors.email}
               placeholder="client@example.com"
+              disabled={actualLoading}
             />
           </div>
 
@@ -136,9 +145,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             onChange={(e) => handleInputChange('businessName', e.target.value)}
             error={errors.businessName}
             placeholder="Enter business name"
+            disabled={actualLoading}
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <Input
               label="Phone Number"
               type="tel"
@@ -146,6 +156,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               onChange={(e) => handleInputChange('phone', e.target.value)}
               error={errors.phone}
               placeholder="+1 (555) 123-4567"
+              disabled={actualLoading}
             />
             
             <Input
@@ -155,15 +166,17 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               error={errors.gstin}
               placeholder="Enter GSTIN number"
               helperText="15-digit GSTIN number (optional)"
+              disabled={actualLoading}
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <Input
               label="City"
               value={formData.city}
               onChange={(e) => handleInputChange('city', e.target.value)}
               placeholder="Enter city"
+              disabled={actualLoading}
             />
             
             <Input
@@ -171,6 +184,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               value={formData.state}
               onChange={(e) => handleInputChange('state', e.target.value)}
               placeholder="Enter state"
+              disabled={actualLoading}
             />
             
             <Input
@@ -178,6 +192,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               value={formData.country}
               onChange={(e) => handleInputChange('country', e.target.value)}
               placeholder="Enter country"
+              disabled={actualLoading}
             />
           </div>
 
@@ -188,28 +203,35 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             error={errors.billingAddress}
             placeholder="Enter complete billing address"
             rows={3}
-            className="resize-none"
+            disabled={actualLoading}
           />
 
-          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t border-gray-200">
-            <Button
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200">
+            <button
               type="button"
-              variant="outline"
               onClick={onCancel}
-              disabled={loading}
-              className="w-full sm:w-auto order-2 sm:order-1 min-w-0 sm:min-w-[120px]"
+              disabled={actualLoading}
+              className="w-full sm:w-32 px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
-              icon={Save}
-              loading={loading}
-              disabled={loading}
-              className="w-full sm:w-auto order-1 sm:order-2 min-w-0 sm:min-w-[140px]"
+              disabled={actualLoading}
+              className="w-full sm:w-40 px-6 py-3 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-xl hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center"
             >
-              {loading ? 'Saving...' : 'Save Client'}
-            </Button>
+              {actualLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Client
+                </>
+              )}
+            </button>
           </div>
         </form>
       </div>

@@ -21,37 +21,33 @@ export const ClientList: React.FC<ClientListProps> = ({
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
+    setIsSubmitting(true);
     try {
-      setFormLoading(true);
-      console.log('ClientList: Starting to add client');
-      const newClient = await onAddClient(clientData);
-      console.log('ClientList: Client added successfully:', newClient);
+      await onAddClient(clientData);
       setShowForm(false);
     } catch (error) {
-      console.error('ClientList: Error adding client:', error);
-      // Don't close form on error, let user see the error and try again
+      console.error('Error adding client:', error);
+      throw error; // Re-throw to let form handle the error
     } finally {
-      setFormLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdateClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!editingClient) return;
+    
+    setIsSubmitting(true);
     try {
-      setFormLoading(true);
-      if (editingClient) {
-        console.log('ClientList: Starting to update client');
-        await onUpdateClient(editingClient.id, clientData);
-        console.log('ClientList: Client updated successfully');
-        setEditingClient(null);
-      }
+      await onUpdateClient(editingClient.id, clientData);
+      setEditingClient(null);
     } catch (error) {
-      console.error('ClientList: Error updating client:', error);
-      // Don't close form on error, let user see the error and try again
+      console.error('Error updating client:', error);
+      throw error; // Re-throw to let form handle the error
     } finally {
-      setFormLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -66,7 +62,7 @@ export const ClientList: React.FC<ClientListProps> = ({
       <ClientForm
         onSubmit={handleAddClient}
         onCancel={() => setShowForm(false)}
-        loading={formLoading}
+        loading={isSubmitting}
         title="Add New Client"
       />
     );
@@ -78,14 +74,14 @@ export const ClientList: React.FC<ClientListProps> = ({
         client={editingClient}
         onSubmit={handleUpdateClient}
         onCancel={() => setEditingClient(null)}
-        loading={formLoading}
+        loading={isSubmitting}
         title="Edit Client"
       />
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Clients</h2>
@@ -110,17 +106,17 @@ export const ClientList: React.FC<ClientListProps> = ({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {clients.map((client) => (
             <div
               key={client.id}
-              className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-4 sm:p-6 hover:shadow-soft-lg transition-all duration-200 shadow-soft"
+              className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-soft-lg transition-all duration-200 shadow-soft"
             >
               <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <h3 className="text-base sm:text-lg font-medium text-gray-900 break-words">{client.name}</h3>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">{client.name}</h3>
                   {client.businessName && (
-                    <p className="text-sm text-gray-600 mt-1 break-words">{client.businessName}</p>
+                    <p className="text-sm text-gray-600 mt-1 truncate">{client.businessName}</p>
                   )}
                 </div>
                 <div className="flex space-x-2 flex-shrink-0 ml-2">
@@ -142,7 +138,7 @@ export const ClientList: React.FC<ClientListProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center text-sm text-gray-600">
                   <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="break-all">{client.email}</span>
+                  <span className="truncate">{client.email}</span>
                 </div>
                 
                 {client.phone && (
@@ -155,7 +151,7 @@ export const ClientList: React.FC<ClientListProps> = ({
                 {client.gstin && (
                   <div className="flex items-center text-sm text-gray-600">
                     <Building className="w-4 h-4 mr-2 flex-shrink-0" />
-                    <span className="break-all">GSTIN: {client.gstin}</span>
+                    <span className="truncate">GSTIN: {client.gstin}</span>
                   </div>
                 )}
 
@@ -170,7 +166,7 @@ export const ClientList: React.FC<ClientListProps> = ({
 
                 <div className="flex items-start text-sm text-gray-600">
                   <Building className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                  <span className="whitespace-pre-line break-words">{client.billingAddress}</span>
+                  <span className="whitespace-pre-line break-words line-clamp-3">{client.billingAddress}</span>
                 </div>
               </div>
 

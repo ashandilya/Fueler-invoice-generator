@@ -115,6 +115,33 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     
+    /* Prevent button movement */
+    button {
+      position: relative;
+    }
+    
+    /* Fixed button widths to prevent movement */
+    .w-32 {
+      width: 8rem !important;
+    }
+    
+    .w-40 {
+      width: 10rem !important;
+    }
+    
+    /* Ensure consistent button heights */
+    .min-h-\[36px\] {
+      min-height: 36px !important;
+    }
+    
+    .min-h-\[40px\] {
+      min-height: 40px !important;
+    }
+    
+    .min-h-\[44px\] {
+      min-height: 44px !important;
+    }
+    
     /* Responsive text sizes */
     .text-xl {
       font-size: 1.125rem;
