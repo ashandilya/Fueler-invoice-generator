@@ -21,9 +21,11 @@ export const ClientList: React.FC<ClientListProps> = ({
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [formLoading, setFormLoading] = useState(false);
 
   const handleAddClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      setFormLoading(true);
       console.log('ClientList: Starting to add client');
       const newClient = await onAddClient(clientData);
       console.log('ClientList: Client added successfully:', newClient);
@@ -31,11 +33,14 @@ export const ClientList: React.FC<ClientListProps> = ({
     } catch (error) {
       console.error('ClientList: Error adding client:', error);
       // Don't close form on error, let user see the error and try again
+    } finally {
+      setFormLoading(false);
     }
   };
 
   const handleUpdateClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      setFormLoading(true);
       if (editingClient) {
         console.log('ClientList: Starting to update client');
         await onUpdateClient(editingClient.id, clientData);
@@ -45,6 +50,8 @@ export const ClientList: React.FC<ClientListProps> = ({
     } catch (error) {
       console.error('ClientList: Error updating client:', error);
       // Don't close form on error, let user see the error and try again
+    } finally {
+      setFormLoading(false);
     }
   };
 
@@ -59,7 +66,7 @@ export const ClientList: React.FC<ClientListProps> = ({
       <ClientForm
         onSubmit={handleAddClient}
         onCancel={() => setShowForm(false)}
-        loading={loading}
+        loading={formLoading}
         title="Add New Client"
       />
     );
@@ -71,7 +78,7 @@ export const ClientList: React.FC<ClientListProps> = ({
         client={editingClient}
         onSubmit={handleUpdateClient}
         onCancel={() => setEditingClient(null)}
-        loading={loading}
+        loading={formLoading}
         title="Edit Client"
       />
     );

@@ -79,15 +79,8 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
     console.log('ClientForm: Validation passed, calling onSubmit');
     
-    try {
-      await onSubmit(formData);
-      console.log('ClientForm: onSubmit completed successfully');
-    } catch (error) {
-      console.error('Error saving client:', error);
-      // Show specific error message from validation
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save client';
-      alert(errorMessage);
-    }
+    await onSubmit(formData);
+    console.log('ClientForm: onSubmit completed');
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -204,7 +197,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               variant="outline"
               onClick={onCancel}
               disabled={loading}
-              className="min-w-[120px] w-full sm:w-auto order-2 sm:order-1"
+              className="w-full sm:w-auto order-2 sm:order-1 min-w-0 sm:min-w-[120px]"
             >
               Cancel
             </Button>
@@ -213,7 +206,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               icon={Save}
               loading={loading}
               disabled={loading}
-              className="min-w-[140px] w-full sm:w-auto order-1 sm:order-2"
+              className="w-full sm:w-auto order-1 sm:order-2 min-w-0 sm:min-w-[140px]"
             >
               {loading ? 'Saving...' : 'Save Client'}
             </Button>

@@ -50,5 +50,80 @@
     select {
       font-size: 16px;
     }
+    
+    /* Fix button width issues on mobile */
+    .min-w-0 {
+      min-width: 0 !important;
+    }
+    
+    /* Ensure proper button layout */
+    button {
+      white-space: nowrap;
+    }
+    
+    /* Better form spacing on mobile */
+    .space-y-3 > * + * {
+      margin-top: 0.75rem;
+    }
+    
+    /* Responsive grid improvements */
+    .grid-cols-1 {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+    
+    /* Better modal sizing on mobile */
+    .max-w-md {
+      max-width: calc(100vw - 2rem);
+    }
+    
+    /* Improved table responsiveness */
+    .overflow-x-auto {
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Better text wrapping */
+    .whitespace-pre-line {
+      white-space: pre-line;
+      word-wrap: break-word;
+    }
+    
+    /* Responsive padding adjustments */
+    .p-4 {
+      padding: 1rem;
+    }
+    
+    .p-6 {
+      padding: 1.5rem;
+    }
+    
+    /* Better flex layouts on mobile */
+    .flex-col {
+      flex-direction: column;
+    }
+    
+    /* Improved spacing for mobile */
+    .space-y-4 > * + * {
+      margin-top: 1rem;
+    }
+    
+    .space-y-6 > * + * {
+      margin-top: 1.5rem;
+    }
+    
+    /* Better button groups on mobile */
+    .grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    
+    /* Responsive text sizes */
+    .text-xl {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+    
+    .text-2xl {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
   }
 }
