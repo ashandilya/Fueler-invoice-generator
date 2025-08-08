@@ -90,8 +90,6 @@ export const useSupabaseClients = () => {
   const addClient = useCallback(async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client> => {
     if (!user) throw new Error('User not authenticated');
 
-    console.log('Adding client with data:', clientData);
-
     // Validate client data before saving
     if (!clientData.name.trim()) {
       throw new Error('Client name is required');
@@ -109,12 +107,15 @@ export const useSupabaseClients = () => {
     try {
       setError(null);
       
+      // Clean and validate email
+      const cleanEmail = clientData.email.toLowerCase().trim();
+      
       // Prepare data for database insertion
       const dbClient = {
         user_id: user.id,
         vendor_name: clientData.name,
         business_name: clientData.businessName || clientData.name,
-        email: clientData.email,
+        email: cleanEmail,
         phone: clientData.phone || null,
         gstin: clientData.gstin || null,
         billing_address: clientData.billingAddress,
@@ -123,7 +124,11 @@ export const useSupabaseClients = () => {
         country: clientData.country || 'India',
       };
       
-      console.log('Converted to DB format:', dbClient);
+      console.log('Attempting to save client:', { 
+        name: dbClient.vendor_name, 
+        email: dbClient.email,
+        user_id: dbClient.user_id 
+      });
 
       const { data, error } = await supabase
         .from('vendors')
@@ -131,12 +136,18 @@ export const useSupabaseClients = () => {
         .select()
         .single();
 
-      console.log('Supabase response:', { data, error });
+      if (error) {
+        console.error('Supabase insert error:', error);
+        throw error;
+      }
 
-      if (error) throw error;
+      if (!data) {
+        throw new Error('No data returned from insert operation');
+      }
+
+      console.log('Client saved successfully:', data.vendor_id);
 
       const newClient = convertToAppClient(data);
-      console.log('New client created:', newClient);
       
       setClients(prev => [newClient, ...prev]);
 
@@ -144,7 +155,6 @@ export const useSupabaseClients = () => {
       const updatedClients = [newClient, ...clients];
       localStorage.setItem(`clients_${user.id}`, JSON.stringify(updatedClients));
       
-      console.log('Client saved successfully');
 
       return newClient;
     } catch (err) {
@@ -153,12 +163,16 @@ export const useSupabaseClients = () => {
       // Provide more specific error messages
       let errorMessage = 'Failed to add client';
       if (err instanceof Error) {
-        if (err.message.includes('duplicate key')) {
+        if (err.message.includes('duplicate key') || err.message.includes('unique constraint')) {
           errorMessage = 'A client with this email already exists';
+        } else if (err.message.includes('check constraint') || err.message.includes('email_check')) {
+          errorMessage = 'Please enter a valid email address';
         } else if (err.message.includes('violates check constraint')) {
           errorMessage = 'Please check that all required fields are filled correctly';
         } else if (err.message.includes('permission denied') || err.message.includes('RLS')) {
           errorMessage = 'Permission denied. Please try logging out and back in.';
+        } else if (err.message.includes('JWT')) {
+          errorMessage = 'Authentication expired. Please refresh the page and try again.';
         } else {
           errorMessage = err.message;
         }

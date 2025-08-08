@@ -79,15 +79,25 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      console.log('Submitting client form with data:', formData);
+      console.log('Submitting client form...');
       await onSubmit(formData);
-      console.log('Client form submitted successfully');
+      console.log('Client saved successfully');
     } catch (error) {
       console.error('Form submission error:', error);
       
       // Show user-friendly error message
       const errorMessage = error instanceof Error ? error.message : 'Failed to save client';
-      alert(`Error: ${errorMessage}`);
+      
+      // More user-friendly error display
+      if (errorMessage.includes('email')) {
+        alert('Please check the email address format and try again.');
+      } else if (errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
+        alert('A client with this email already exists. Please use a different email address.');
+      } else if (errorMessage.includes('required')) {
+        alert('Please fill in all required fields and try again.');
+      } else {
+        alert(`Error saving client: ${errorMessage}`);
+      }
       
       // Form stays open on error so user can fix issues
     } finally {
