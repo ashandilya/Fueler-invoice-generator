@@ -77,6 +77,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
       return;
     }
 
+    console.log('Form validation passed, starting submission...');
     setIsSubmitting(true);
     try {
       console.log('Submitting client form...');
@@ -84,6 +85,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({
       console.log('Client saved successfully');
     } catch (error) {
       console.error('Form submission error:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
       // Show user-friendly error message
       const errorMessage = error instanceof Error ? error.message : 'Failed to save client';

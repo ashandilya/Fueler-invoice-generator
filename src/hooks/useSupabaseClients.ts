@@ -90,6 +90,9 @@ export const useSupabaseClients = () => {
   const addClient = useCallback(async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client> => {
     if (!user) throw new Error('User not authenticated');
 
+    console.log('Starting addClient with user:', user.id);
+    console.log('Client data to save:', clientData);
+
     // Validate client data before saving
     if (!clientData.name.trim()) {
       throw new Error('Client name is required');
@@ -110,6 +113,8 @@ export const useSupabaseClients = () => {
       // Clean and validate email
       const cleanEmail = clientData.email.toLowerCase().trim();
       
+      console.log('Cleaned email:', cleanEmail);
+      
       // Prepare data for database insertion
       const dbClient = {
         user_id: user.id,
@@ -124,17 +129,23 @@ export const useSupabaseClients = () => {
         country: clientData.country || 'India',
       };
       
-      console.log('Attempting to save client:', { 
-        name: dbClient.vendor_name, 
-        email: dbClient.email,
-        user_id: dbClient.user_id 
+      console.log('Database client object:', dbClient);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000);
       });
 
-      const { data, error } = await supabase
+      const supabasePromise = supabase
         .from('vendors')
         .insert(dbClient)
         .select()
         .single();
+        
+      console.log('Making Supabase request...');
+      const { data, error } = await Promise.race([supabasePromise, timeoutPromise]) as any;
+      
+      console.log('Supabase response:', { data, error });
 
       if (error) {
         console.error('Supabase insert error:', error);
@@ -148,6 +159,7 @@ export const useSupabaseClients = () => {
       console.log('Client saved successfully:', data.vendor_id);
 
       const newClient = convertToAppClient(data);
+      console.log('Converted client:', newClient);
       
       setClients(prev => [newClient, ...prev]);
 
@@ -159,6 +171,7 @@ export const useSupabaseClients = () => {
       return newClient;
     } catch (err) {
       console.error('Error adding client:', err);
+      console.error('Full error object:', JSON.stringify(err, null, 2));
       
       // Provide more specific error messages
       let errorMessage = 'Failed to add client';
