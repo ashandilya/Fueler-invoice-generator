@@ -49,7 +49,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     }
 
     if (!formData.businessName.trim()) {
-      newErrors.businessName = 'Business name is required';
+      // Business name is optional, will use client name as fallback
     }
 
     if (!formData.billingAddress.trim()) {

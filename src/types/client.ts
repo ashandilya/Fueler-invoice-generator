@@ -3,6 +3,7 @@ export interface Client {
   name: string;
   email: string;
   businessName: string;
+  vendorName?: string; // For database mapping
   phone?: string;
   gstin?: string;
   city?: string;

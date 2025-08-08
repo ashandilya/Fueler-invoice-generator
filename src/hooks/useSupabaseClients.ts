@@ -6,9 +6,10 @@ import { Client } from '../types/client';
 // Convert database vendor to app client format
 const convertToAppClient = (dbVendor: DatabaseVendor): Client => ({
   id: dbVendor.vendor_id,
-  name: dbVendor.vendor_name,
+  name: dbVendor.business_name, // Use business_name as the display name
   email: dbVendor.email,
   businessName: dbVendor.business_name,
+  vendorName: dbVendor.vendor_name, // Keep vendor_name for database operations
   phone: dbVendor.phone,
   gstin: dbVendor.gstin,
   city: dbVendor.city,
@@ -20,10 +21,10 @@ const convertToAppClient = (dbVendor: DatabaseVendor): Client => ({
 });
 
 // Convert app client to database format
-const convertToDbClient = (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Omit<DatabaseVendor, 'vendor_id' | 'created_at' | 'updated_at'> => ({
+const convertToDbClient = (client: any, userId: string): Omit<DatabaseVendor, 'vendor_id' | 'created_at' | 'updated_at'> => ({
   user_id: userId,
-  vendor_name: client.name,
-  business_name: client.businessName,
+  vendor_name: client.vendorName || client.name, // Use vendorName if available, fallback to name
+  business_name: client.businessName || client.name, // Use businessName if available, fallback to name
   email: client.email,
   phone: client.phone,
   gstin: client.gstin,
@@ -101,16 +102,21 @@ export const useSupabaseClients = () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientData.email)) {
       throw new Error('Please enter a valid email address');
     }
-    if (!clientData.businessName.trim()) {
-      throw new Error('Business name is required');
-    }
     if (!clientData.billingAddress.trim()) {
       throw new Error('Billing address is required');
     }
 
     try {
       setError(null);
-      const dbClient = convertToDbClient(clientData, user.id);
+      
+      // Prepare data with proper field mapping
+      const dbClientData = {
+        ...clientData,
+        vendorName: clientData.name, // Map name to vendor_name
+        businessName: clientData.businessName || clientData.name, // Use businessName or fallback to name
+      };
+      
+      const dbClient = convertToDbClient(dbClientData, user.id);
       
       console.log('Converted to DB format:', dbClient);
 
@@ -153,9 +159,6 @@ export const useSupabaseClients = () => {
     if (updates.email !== undefined && (!updates.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.email))) {
       throw new Error('Please enter a valid email address');
     }
-    if (updates.businessName !== undefined && !updates.businessName.trim()) {
-      throw new Error('Business name cannot be empty');
-    }
     if (updates.billingAddress !== undefined && !updates.billingAddress.trim()) {
       throw new Error('Billing address cannot be empty');
     }
@@ -163,10 +166,42 @@ export const useSupabaseClients = () => {
     try {
       setError(null);
 
+      // Map frontend fields to database fields
+      const dbUpdates: any = {};
+      
+      if (updates.name !== undefined) {
+        dbUpdates.vendor_name = updates.name;
+        dbUpdates.business_name = updates.businessName || updates.name;
+      }
+      if (updates.businessName !== undefined) {
+        dbUpdates.business_name = updates.businessName;
+      }
+      if (updates.email !== undefined) {
+        dbUpdates.email = updates.email;
+      }
+      if (updates.phone !== undefined) {
+        dbUpdates.phone = updates.phone;
+      }
+      if (updates.gstin !== undefined) {
+        dbUpdates.gstin = updates.gstin;
+      }
+      if (updates.billingAddress !== undefined) {
+        dbUpdates.billing_address = updates.billingAddress;
+      }
+      if (updates.city !== undefined) {
+        dbUpdates.city = updates.city;
+      }
+      if (updates.state !== undefined) {
+        dbUpdates.state = updates.state;
+      }
+      if (updates.country !== undefined) {
+        dbUpdates.country = updates.country;
+      }
+
       const { error } = await supabase
         .from('vendors')
         .update({
-          ...updates,
+          ...dbUpdates,
           updated_at: new Date().toISOString(),
         })
         .eq('vendor_id', id)
