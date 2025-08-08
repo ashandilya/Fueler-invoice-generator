@@ -93,6 +93,19 @@ export const useSupabaseClients = () => {
     console.log('Starting addClient with user:', user.id);
     console.log('Client data to save:', clientData);
 
+    // Check authentication status first
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    console.log('Current session:', session?.user?.id);
+    
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+      throw new Error('Authentication session invalid. Please refresh and try again.');
+    }
+    
+    if (!session?.user) {
+      throw new Error('No active session. Please sign in again.');
+    }
+
     // Validate client data before saving
     if (!clientData.name.trim()) {
       throw new Error('Client name is required');
@@ -131,20 +144,29 @@ export const useSupabaseClients = () => {
       
       console.log('Database client object:', dbClient);
       
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000);
-      });
-
-      const supabasePromise = supabase
+      console.log('Making Supabase request...');
+      
+      // Test connection first
+      const { data: testData, error: testError } = await supabase
+        .from('vendors')
+        .select('count')
+        .eq('user_id', user.id)
+        .limit(1);
+        
+      console.log('Connection test result:', { testData, testError });
+      
+      if (testError) {
+        console.error('Connection test failed:', testError);
+        throw new Error(`Database connection failed: ${testError.message}`);
+      }
+      
+      // Now try the actual insert
+      const { data, error } = await supabase
         .from('vendors')
         .insert(dbClient)
         .select()
         .single();
         
-      console.log('Making Supabase request...');
-      const { data, error } = await Promise.race([supabasePromise, timeoutPromise]) as any;
-      
       console.log('Supabase response:', { data, error });
 
       if (error) {
