@@ -60,13 +60,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
   return (
     <div className="space-y-8">
       {/* Company Information */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center">
           <Building className="w-5 h-5 mr-2 text-primary-600" />
           Company Information
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             <Input
               label="Company Name"
               value={invoice.company.name}
@@ -80,10 +80,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               value={invoice.company.address}
               onChange={(e) => onUpdateCompany({ address: e.target.value })}
               placeholder="Enter your company address"
-              rows={4}
+              rows={3}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <Input
                 label="City"
                 value={invoice.company.city || ''}
@@ -107,7 +107,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Email"
                 type="email"
@@ -126,7 +126,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <FileUpload
               label="Company Logo"
               accept="image/*"
@@ -147,12 +147,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       </div>
 
       {/* Invoice Details */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center">
           <Hash className="w-5 h-5 mr-2 text-primary-600" />
           Invoice Details
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           <Input
             label="Invoice Number"
             value={invoice.invoiceNumber}
@@ -180,13 +180,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       </div>
 
       {/* Client Information */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center">
           <User className="w-5 h-5 mr-2 text-primary-600" />
           Bill To
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+          <div className="space-y-4 sm:space-y-6">
             <Input
               label="Client Name *"
               value={invoice.client.name}
@@ -216,7 +216,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             />
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <Textarea
               label="Billing Address *"
               value={invoice.client.address}
@@ -225,11 +225,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 validateField('clientAddress', e.target.value);
               }}
               placeholder="Enter client address"
-              rows={4}
+              rows={3}
               error={errors.clientAddress}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <Input
                 label="City"
                 value={invoice.client.city || ''}
@@ -257,9 +257,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       </div>
 
       {/* Line Items */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Items</h2>
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Items</h2>
           <Button onClick={onAddLineItem} variant="outline" size="sm" icon={Plus}>
             Add Item
           </Button>
@@ -267,7 +267,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         <div className="space-y-4">
           {invoice.items.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl">
+            <div className="text-center py-8 sm:py-12 text-gray-500 bg-gray-50 rounded-xl">
               <p>No items added yet. Click "Add Item" to get started.</p>
               {errors.items && (
                 <p className="text-sm text-red-600 mt-2">{errors.items}</p>
@@ -275,8 +275,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
           ) : (
             invoice.items.map((item, index) => (
-              <div key={item.id} className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-6 bg-gray-50 rounded-xl">
-                <div className="lg:col-span-5">
+              <div key={item.id} className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 p-4 sm:p-6 bg-gray-50 rounded-xl">
+                <div className="lg:col-span-5 order-1">
                   <Input
                     label={index === 0 ? "Description *" : ""}
                     value={item.description}
@@ -289,7 +289,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                   />
                 </div>
                 
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 order-2">
                   <Input
                     label={index === 0 ? "Quantity" : ""}
                     type="number"
@@ -300,7 +300,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                   />
                 </div>
                 
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 order-3">
                   <Input
                     label={index === 0 ? "Rate" : ""}
                     type="number"
@@ -312,7 +312,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                   />
                 </div>
                 
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 order-4">
                   <Input
                     label={index === 0 ? "Amount" : ""}
                     value={item.amount.toFixed(2)}
@@ -321,7 +321,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                   />
                 </div>
                 
-                <div className="lg:col-span-1 flex items-end">
+                <div className="lg:col-span-1 flex items-end order-5">
                   <Button
                     onClick={() => onRemoveLineItem(item.id)}
                     variant="outline"
@@ -338,9 +338,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       </div>
 
       {/* Tax and Discount */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Tax & Discount</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Tax & Discount</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <Input
             label="Tax Rate (%)"
             type="number"
@@ -381,21 +381,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             currentCurrency={invoice.currency}
             onCurrencyChange={(currency) => onUpdateInvoice({ currency })}
             amount={invoice.total}
-            className="lg:col-span-1"
+            className="sm:col-span-2 lg:col-span-1"
           />
         </div>
       </div>
 
       {/* Notes and Payment Terms */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Additional Information</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Additional Information</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           <Textarea
             label="Notes"
             value={invoice.notes}
             onChange={(e) => onUpdateInvoice({ notes: e.target.value })}
             placeholder="Additional notes or terms..."
-            rows={6}
+            rows={4}
           />
           
           <Textarea
@@ -403,7 +403,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             value={invoice.paymentTerms}
             onChange={(e) => onUpdateInvoice({ paymentTerms: e.target.value })}
             placeholder="Payment terms and conditions..."
-            rows={6}
+            rows={4}
           />
         </div>
       </div>

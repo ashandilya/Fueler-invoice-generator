@@ -45,11 +45,11 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          className="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2.5 sm:py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
         >
           <span className="flex items-center">
             <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-2" />
-            <span className="block truncate">
+            <span className="block truncate text-sm">
               {selectedClient ? selectedClient.name : 'Choose a client...'}
             </span>
           </span>
@@ -59,13 +59,13 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
         </button>
 
         {isOpen && (
-          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-48 sm:max-h-60 rounded-md py-1 text-sm ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none">
             <div className="sticky top-0 z-10 bg-white px-3 py-2 border-b border-gray-200">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full pl-10 pr-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   placeholder="Search clients..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -76,14 +76,14 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
             {selectedClient && (
               <button
                 onClick={clearSelection}
-                className="w-full text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 border-b border-gray-100"
+                className="w-full text-left px-3 py-2 text-xs sm:text-sm text-gray-500 hover:bg-gray-50 border-b border-gray-100"
               >
                 Clear selection
               </button>
             )}
 
             {filteredClients.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-gray-500">
+              <div className="px-3 py-2 text-xs sm:text-sm text-gray-500">
                 {searchTerm ? 'No clients found' : 'No clients available'}
               </div>
             ) : (
@@ -96,14 +96,14 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="font-medium">{client.name}</span>
-                    <span className="text-sm text-gray-500">{client.businessName}</span>
+                    <span className="font-medium text-sm break-words">{client.name}</span>
+                    <span className="text-xs sm:text-sm text-gray-500 break-words">{client.businessName}</span>
                     {(client.city || client.state) && (
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-400 break-words">
                         {[client.city, client.state].filter(Boolean).join(', ')}
                       </span>
                     )}
-                    <span className="text-xs text-gray-400">{client.email}</span>
+                    <span className="text-xs text-gray-400 break-all">{client.email}</span>
                   </div>
                 </button>
               ))

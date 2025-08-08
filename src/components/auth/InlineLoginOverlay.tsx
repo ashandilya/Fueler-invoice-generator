@@ -27,13 +27,13 @@ export const InlineLoginOverlay: React.FC = () => {
       
       {/* Login Card */}
       <div className="relative z-10 w-full max-w-lg mx-4 animate-slide-up">
-        <div className="bg-white rounded-2xl shadow-soft-lg border border-gray-100 p-8">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft-lg border border-gray-100 p-6 sm:p-8">
           {/* Logo and Branding */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 sm:mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl mb-4 shadow-soft">
               <FileText className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               Welcome to Invoicce.to
             </h1>
             <p className="text-gray-600 text-sm leading-relaxed">
@@ -42,7 +42,7 @@ export const InlineLoginOverlay: React.FC = () => {
           </div>
 
           {/* Features Preview */}
-          <div className="space-y-3 mb-8">
+          <div className="space-y-3 mb-6 sm:mb-8">
             <div className="flex items-center text-sm text-gray-600">
               <div className="w-2 h-2 bg-primary-500 rounded-full mr-3"></div>
               Professional invoice templates
@@ -68,7 +68,7 @@ export const InlineLoginOverlay: React.FC = () => {
             disabled={isLoading}
             variant="primary"
             className="w-full"
-            size="lg"
+            size="md"
           >
             <div className="flex items-center justify-center space-x-3">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -89,7 +89,7 @@ export const InlineLoginOverlay: React.FC = () => {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              <span className="font-medium">Continue with Google</span>
+              <span className="font-medium text-sm sm:text-base">Continue with Google</span>
               <ArrowRight className="w-4 h-4" />
             </div>
           </Button>

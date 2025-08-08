@@ -72,9 +72,9 @@ export const PastInvoicesTab: React.FC<PastInvoicesTabProps> = ({
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Past Invoices</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Past Invoices</h2>
           <p className="text-sm text-gray-600 mt-1">View and manage your saved invoices</p>
         </div>
         <div className="text-sm text-gray-500">
@@ -86,14 +86,14 @@ export const PastInvoicesTab: React.FC<PastInvoicesTabProps> = ({
         {invoices.map((invoice) => (
           <div
             key={invoice.id}
-            className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-soft-lg transition-all duration-200 shadow-soft"
+            className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-4 sm:p-6 hover:shadow-soft-lg transition-all duration-200 shadow-soft"
           >
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <div className="flex flex-col space-y-4">
               {/* Invoice Info */}
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-3">
                   <FileText className="w-5 h-5 text-gray-400" />
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">
                     #{invoice.invoiceNumber}
                   </h3>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(invoice.status)}`}>
@@ -101,10 +101,10 @@ export const PastInvoicesTab: React.FC<PastInvoicesTabProps> = ({
                   </span>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-sm">
                   <div>
                     <p className="text-gray-500 font-medium">Client</p>
-                    <p className="text-gray-900">{invoice.client.name || 'No client'}</p>
+                    <p className="text-gray-900 break-words">{invoice.client.name || 'No client'}</p>
                   </div>
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 mr-2 text-gray-400" />
@@ -124,13 +124,13 @@ export const PastInvoicesTab: React.FC<PastInvoicesTabProps> = ({
               </div>
 
               {/* Actions */}
-              <div className="flex flex-wrap gap-2 lg:flex-nowrap lg:space-x-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 <Button
                   onClick={() => onEdit(invoice)}
                   icon={Edit}
                   variant="outline"
                   size="sm"
-                  className="flex-1 lg:flex-none"
+                  className="text-xs sm:text-sm"
                 >
                   Edit
                 </Button>
@@ -140,7 +140,7 @@ export const PastInvoicesTab: React.FC<PastInvoicesTabProps> = ({
                   icon={Copy}
                   variant="outline"
                   size="sm"
-                  className="flex-1 lg:flex-none"
+                  className="text-xs sm:text-sm"
                 >
                   Duplicate
                 </Button>
@@ -150,7 +150,7 @@ export const PastInvoicesTab: React.FC<PastInvoicesTabProps> = ({
                   icon={Download}
                   variant="outline"
                   size="sm"
-                  className="flex-1 lg:flex-none"
+                  className="text-xs sm:text-sm"
                 >
                   PDF
                 </Button>
@@ -160,7 +160,7 @@ export const PastInvoicesTab: React.FC<PastInvoicesTabProps> = ({
                   icon={Share}
                   variant="outline"
                   size="sm"
-                  className="flex-1 lg:flex-none"
+                  className="text-xs sm:text-sm"
                 >
                   Share
                 </Button>
@@ -170,7 +170,7 @@ export const PastInvoicesTab: React.FC<PastInvoicesTabProps> = ({
                   icon={Trash2}
                   variant="outline"
                   size="sm"
-                  className="flex-1 lg:flex-none text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                  className="text-xs sm:text-sm text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 col-span-2 sm:col-span-1"
                 >
                   Delete
                 </Button>

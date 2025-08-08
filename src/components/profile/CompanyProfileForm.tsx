@@ -119,25 +119,25 @@ export const CompanyProfileForm: React.FC = () => {
 
   // Show form even while loading, with default data
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-        <div className="flex justify-between items-center mb-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-0">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Company Profile</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Company Profile</h2>
             <p className="text-sm text-gray-600 mt-1">Manage your company information and branding</p>
           </div>
           <Button
             onClick={handleLogout}
             variant="outline"
             icon={LogOut}
-            className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+            className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 w-full sm:w-auto"
           >
             Logout
           </Button>
         </div>
 
         {error && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="mb-4 sm:mb-8 p-4 bg-red-50 border border-red-200 rounded-xl">
             <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
@@ -148,9 +148,9 @@ export const CompanyProfileForm: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               <Input
                 label="Company Name"
                 value={formData.company_name}
@@ -163,11 +163,11 @@ export const CompanyProfileForm: React.FC = () => {
                 value={formData.company_address}
                 onChange={(e) => handleInputChange('company_address', e.target.value)}
                 placeholder="Enter your company address"
-                rows={4}
+                rows={3}
                 className="resize-none"
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <Input
                   label="City"
                   value={formData.city}
@@ -199,7 +199,7 @@ export const CompanyProfileForm: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div className="relative">
                 <FileUpload
                   label="Company Logo"
@@ -232,13 +232,13 @@ export const CompanyProfileForm: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end pt-8 border-t border-gray-100">
+          <div className="flex justify-end pt-4 sm:pt-8 border-t border-gray-100">
             <Button
               type="submit"
               icon={Save}
               loading={saving}
               disabled={saving || uploadingLogo || uploadingSignature}
-              className="min-w-[140px]"
+              className="min-w-[140px] w-full sm:w-auto"
             >
               {saving ? 'Saving...' : 'Save Profile'}
             </Button>

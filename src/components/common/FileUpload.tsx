@@ -106,7 +106,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               <img
                 src={currentFile}
                 alt="Uploaded file"
-                className="h-24 w-24 object-cover rounded-lg border border-gray-300"
+                className="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-lg border border-gray-300"
               />
               <button
                 onClick={removeFile}
@@ -151,12 +151,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           
           <div className="text-center">
             {isImage ? (
-              <Image className="mx-auto h-12 w-12 text-gray-400" />
+              <Image className="mx-auto h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-gray-400" />
             ) : (
-              <Upload className="mx-auto h-12 w-12 text-gray-400" />
+              <Upload className="mx-auto h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-gray-400" />
             )}
-            <div className="mt-4">
-              <p className="text-sm text-gray-600">
+            <div className="mt-2 sm:mt-4">
+              <p className="text-xs sm:text-sm text-gray-600">
                 <span className="font-medium text-primary-600 hover:text-primary-500">
                   Click to upload
                 </span>{' '}

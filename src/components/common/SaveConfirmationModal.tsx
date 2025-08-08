@@ -23,9 +23,9 @@ export const SaveConfirmationModal: React.FC<SaveConfirmationModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-soft-lg max-w-md w-full animate-slide-up">
-        <div className="flex justify-between items-center p-8 border-b border-gray-100">
-          <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft-lg max-w-md w-full animate-slide-up mx-4">
+        <div className="flex justify-between items-center p-4 sm:p-6 lg:p-8 border-b border-gray-100">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 pr-4">{title}</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg"
@@ -34,14 +34,15 @@ export const SaveConfirmationModal: React.FC<SaveConfirmationModalProps> = ({
           </button>
         </div>
         
-        <div className="p-8">
-          <p className="text-gray-600 mb-8 leading-relaxed">{message}</p>
+        <div className="p-4 sm:p-6 lg:p-8">
+          <p className="text-gray-600 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">{message}</p>
           
-          <div className="flex justify-end space-x-3">
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={loading}
+              className="w-full sm:w-auto order-2 sm:order-1"
             >
               Cancel
             </Button>
@@ -50,6 +51,7 @@ export const SaveConfirmationModal: React.FC<SaveConfirmationModalProps> = ({
               onClick={onConfirm}
               loading={loading}
               disabled={loading}
+              className="w-full sm:w-auto order-1 sm:order-2"
             >
               {loading ? 'Saving...' : 'Save'}
             </Button>

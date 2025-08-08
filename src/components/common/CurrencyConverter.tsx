@@ -24,9 +24,9 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
   const rateDirection = rates.INR > 80 ? 'up' : 'down'; // Arbitrary threshold for demo
 
   return (
-    <div className={`bg-white rounded-2xl shadow-soft border border-gray-100 p-8 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Currency</h2>
+    <div className={`bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8 ${className}`}>
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Currency</h2>
         <button
           onClick={refreshRates}
           disabled={loading}
@@ -48,7 +48,7 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
         <div className="flex space-x-2">
           <button
             onClick={() => onCurrencyChange('INR')}
-            className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 py-2 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-md transition-colors ${
               currentCurrency === 'INR'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -58,7 +58,7 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
           </button>
           <button
             onClick={() => onCurrencyChange('USD')}
-            className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 py-2 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-md transition-colors ${
               currentCurrency === 'USD'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -72,14 +72,14 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
         <div className="bg-gray-50 rounded-md p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Exchange Rate:</span>
+              <span className="text-xs sm:text-sm text-gray-600">Exchange Rate:</span>
               {rateDirection === 'up' ? (
                 <TrendingUp className="w-4 h-4 text-green-500" />
               ) : (
                 <TrendingDown className="w-4 h-4 text-red-500" />
               )}
             </div>
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-xs sm:text-sm font-medium text-gray-900">
               1 USD = ₹{rates.INR.toFixed(2)}
             </span>
           </div>
@@ -92,13 +92,13 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
         {amount > 0 && (
           <div className="bg-blue-50 rounded-md p-3">
             <div className="text-center">
-              <p className="text-sm text-gray-600">Current Total</p>
-              <p className="text-lg font-semibold text-blue-900">
+              <p className="text-xs sm:text-sm text-gray-600">Current Total</p>
+              <p className="text-base sm:text-lg font-semibold text-blue-900 break-words">
                 {formatCurrency(amount, currentCurrency)}
               </p>
               <div className="flex items-center justify-center space-x-2 mt-2">
                 <span className="text-xs text-gray-500">≈</span>
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-xs sm:text-sm font-medium text-gray-700 break-words">
                   {formatCurrency(convertedAmount, otherCurrency)}
                 </span>
               </div>

@@ -98,11 +98,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
-        <div className="flex justify-between items-center mb-6">
+    <div className="max-w-3xl mx-auto px-4 sm:px-0">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h2>
             <p className="text-sm text-gray-600 mt-1">Enter client details for future invoices</p>
           </div>
           <Button
@@ -111,13 +111,14 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             variant="ghost"
             size="sm"
             icon={X}
+            className="self-end sm:self-auto"
           >
             Close
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
             <Input
               label="Client Name *"
               value={formData.name}
@@ -144,7 +145,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             placeholder="Enter business name"
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <Input
               label="Phone Number"
               type="tel"
@@ -164,7 +165,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             <Input
               label="City"
               value={formData.city}
@@ -193,17 +194,17 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             onChange={(e) => handleInputChange('billingAddress', e.target.value)}
             error={errors.billingAddress}
             placeholder="Enter complete billing address"
-            rows={4}
+            rows={3}
             className="resize-none"
           />
 
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t border-gray-200">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
               disabled={loading}
-              className="min-w-[120px]"
+              className="min-w-[120px] w-full sm:w-auto order-2 sm:order-1"
             >
               Cancel
             </Button>
@@ -212,7 +213,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               icon={Save}
               loading={loading}
               disabled={loading}
-              className="min-w-[140px]"
+              className="min-w-[140px] w-full sm:w-auto order-1 sm:order-2"
             >
               {loading ? 'Saving...' : 'Save Client'}
             </Button>

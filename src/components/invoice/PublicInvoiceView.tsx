@@ -139,27 +139,28 @@ export const PublicInvoiceView: React.FC = () => {
       {/* Header */}
       <header className="bg-white shadow-soft border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:h-16 space-y-3 sm:space-y-0">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Invoicce.to</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900">Invoicce.to</h1>
               <p className="text-xs text-gray-500">Invoice #{invoice.invoiceNumber}</p>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
               <Button
                 onClick={handleDownload}
                 loading={isDownloading}
                 disabled={isDownloading}
                 icon={Download}
                 variant="primary"
-                size="md"
+                size="sm"
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
                 {isDownloading ? 'Generating...' : 'Download PDF'}
               </Button>
               
               <a
                 href="/"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap"
               >
                 Create Your Invoice
               </a>
@@ -169,7 +170,7 @@ export const PublicInvoiceView: React.FC = () => {
       </header>
 
       {/* Invoice Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         <InvoicePreview invoice={invoice} />
       </main>
     </div>

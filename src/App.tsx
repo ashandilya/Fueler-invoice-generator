@@ -371,12 +371,12 @@ function AppContent() {
         
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Tab Navigation */}
-          <div className="mb-12">
+          <div className="mb-8 sm:mb-12">
             <div className="border-b border-gray-100">
-              <nav className="-mb-px flex space-x-12">
+              <nav className="-mb-px flex space-x-4 sm:space-x-8 lg:space-x-12 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('form')}
-                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                  className={`py-3 px-1 border-b-2 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap ${
                     activeTab === 'form'
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
@@ -386,7 +386,7 @@ function AppContent() {
                 </button>
                 <button
                   onClick={() => setActiveTab('preview')}
-                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                  className={`py-3 px-1 border-b-2 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap ${
                     activeTab === 'preview'
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
@@ -396,7 +396,7 @@ function AppContent() {
                 </button>
                 <button
                   onClick={() => setActiveTab('clients')}
-                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                  className={`py-3 px-1 border-b-2 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap ${
                     activeTab === 'clients'
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
@@ -406,17 +406,17 @@ function AppContent() {
                 </button>
                 <button
                   onClick={() => setActiveTab('invoices')}
-                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                  className={`py-3 px-1 border-b-2 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap ${
                     activeTab === 'invoices'
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                   }`}
                 >
-                  Past Invoices
+                  Invoices
                 </button>
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`py-3 px-1 border-b-2 font-medium text-base transition-all duration-200 ${
+                  className={`py-3 px-1 border-b-2 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap ${
                     activeTab === 'profile'
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
@@ -453,7 +453,7 @@ function AppContent() {
               {activeTab === 'form' ? (
                 <div className="space-y-8">
                   {/* Client Selector */}
-                  <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
+                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft border border-gray-100 p-4 sm:p-6 lg:p-8">
                     <ClientSelector
                       clients={clients}
                       selectedClient={selectedClient}
