@@ -70,12 +70,18 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('ClientForm: Form submitted with data:', formData);
+    
     if (!validateForm()) {
+      console.log('ClientForm: Validation failed');
       return;
     }
 
+    console.log('ClientForm: Validation passed, calling onSubmit');
+    
     try {
       await onSubmit(formData);
+      console.log('ClientForm: onSubmit completed successfully');
     } catch (error) {
       console.error('Error saving client:', error);
       // Show specific error message from validation
@@ -99,12 +105,15 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
             <p className="text-sm text-gray-600 mt-1">Enter client details for future invoices</p>
           </div>
-          <button
+          <Button
+            type="button"
             onClick={onCancel}
-            className="min-w-[140px]"
+            variant="ghost"
+            size="sm"
+            icon={X}
           >
-            <X className="w-6 h-6" />
-          </button>
+            Close
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -194,7 +203,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               variant="outline"
               onClick={onCancel}
               disabled={loading}
-              className="min-w-[100px]"
+              className="min-w-[120px]"
             >
               Cancel
             </Button>
@@ -203,7 +212,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               icon={Save}
               loading={loading}
               disabled={loading}
-              className="min-w-[120px]"
+              className="min-w-[140px]"
             >
               {loading ? 'Saving...' : 'Save Client'}
             </Button>

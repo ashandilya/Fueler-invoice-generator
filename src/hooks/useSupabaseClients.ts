@@ -89,6 +89,8 @@ export const useSupabaseClients = () => {
   const addClient = useCallback(async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client> => {
     if (!user) throw new Error('User not authenticated');
 
+    console.log('Adding client with data:', clientData);
+
     // Validate client data before saving
     if (!clientData.name.trim()) {
       throw new Error('Client name is required');
@@ -109,6 +111,8 @@ export const useSupabaseClients = () => {
     try {
       setError(null);
       const dbClient = convertToDbClient(clientData, user.id);
+      
+      console.log('Converted to DB format:', dbClient);
 
       const { data, error } = await supabase
         .from('vendors')
@@ -116,14 +120,20 @@ export const useSupabaseClients = () => {
         .select()
         .single();
 
+      console.log('Supabase response:', { data, error });
+
       if (error) throw error;
 
       const newClient = convertToAppClient(data);
+      console.log('New client created:', newClient);
+      
       setClients(prev => [newClient, ...prev]);
 
       // Update cache
       const updatedClients = [newClient, ...clients];
       localStorage.setItem(`clients_${user.id}`, JSON.stringify(updatedClients));
+      
+      console.log('Client saved successfully');
 
       return newClient;
     } catch (err) {

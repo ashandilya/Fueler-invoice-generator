@@ -23,14 +23,28 @@ export const ClientList: React.FC<ClientListProps> = ({
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
   const handleAddClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
-    await onAddClient(clientData);
-    setShowForm(false);
+    try {
+      console.log('ClientList: Starting to add client');
+      const newClient = await onAddClient(clientData);
+      console.log('ClientList: Client added successfully:', newClient);
+      setShowForm(false);
+    } catch (error) {
+      console.error('ClientList: Error adding client:', error);
+      // Don't close form on error, let user see the error and try again
+    }
   };
 
   const handleUpdateClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (editingClient) {
-      await onUpdateClient(editingClient.id, clientData);
-      setEditingClient(null);
+    try {
+      if (editingClient) {
+        console.log('ClientList: Starting to update client');
+        await onUpdateClient(editingClient.id, clientData);
+        console.log('ClientList: Client updated successfully');
+        setEditingClient(null);
+      }
+    } catch (error) {
+      console.error('ClientList: Error updating client:', error);
+      // Don't close form on error, let user see the error and try again
     }
   };
 
