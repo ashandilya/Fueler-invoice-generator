@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { ChevronDown, Search, User } from 'lucide-react';
-import { Client } from '../../types/client';
+import React, { useState } from "react";
+import { ChevronDown, Search, User } from "lucide-react";
+import { Client } from "../../types/client";
 
 interface ClientSelectorProps {
   clients: Client[];
-  selectedClient?: Client;
+  selectedClient?: Client | null;
   onClientSelect: (client: Client | null) => void;
   className?: string;
 }
@@ -13,21 +13,22 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
   clients,
   selectedClient,
   onClientSelect,
-  className = '',
+  className = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClients = clients.filter(
+    (client) =>
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleClientSelect = (client: Client) => {
     onClientSelect(client);
     setIsOpen(false);
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   const clearSelection = () => {
@@ -40,7 +41,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
       <label className="block text-sm font-medium text-gray-700 mb-2">
         Choose My Clients
       </label>
-      
+
       <div className="relative">
         <button
           type="button"
@@ -50,7 +51,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
           <span className="flex items-center">
             <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-2" />
             <span className="block truncate text-sm">
-              {selectedClient ? selectedClient.name : 'Choose a client...'}
+              {selectedClient ? selectedClient.name : "Choose a client..."}
             </span>
           </span>
           <span className="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -84,7 +85,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
 
             {filteredClients.length === 0 ? (
               <div className="px-3 py-2 text-xs sm:text-sm text-gray-500">
-                {searchTerm ? 'No clients found' : 'No clients available'}
+                {searchTerm ? "No clients found" : "No clients available"}
               </div>
             ) : (
               filteredClients.map((client) => (
@@ -92,18 +93,26 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
                   key={client.id}
                   onClick={() => handleClientSelect(client)}
                   className={`w-full text-left px-3 py-2 hover:bg-gray-50 ${
-                    selectedClient?.id === client.id ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
+                    selectedClient?.id === client.id
+                      ? "bg-blue-50 text-blue-900"
+                      : "text-gray-900"
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="font-medium text-sm break-words">{client.name}</span>
-                    <span className="text-xs sm:text-sm text-gray-500 break-words">{client.businessName}</span>
+                    <span className="font-medium text-sm break-words">
+                      {client.name}
+                    </span>
+                    <span className="text-xs sm:text-sm text-gray-500 break-words">
+                      {client.businessName}
+                    </span>
                     {(client.city || client.state) && (
                       <span className="text-xs text-gray-400 break-words">
-                        {[client.city, client.state].filter(Boolean).join(', ')}
+                        {[client.city, client.state].filter(Boolean).join(", ")}
                       </span>
                     )}
-                    <span className="text-xs text-gray-400 break-all">{client.email}</span>
+                    <span className="text-xs text-gray-400 break-all">
+                      {client.email}
+                    </span>
                   </div>
                 </button>
               ))
