@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
 import { Client } from '../../types/client';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { Button } from '../ui/Button';
@@ -20,6 +21,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   loading,
   title,
 }) => {
+  const { validateField } = useErrorHandler();
   const [formData, setFormData] = useState({
     name: client?.name || '',
     email: client?.email || '',
@@ -34,37 +36,44 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 
-  const validateForm = () => {
+  const validateFormData = () => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Client name is required';
+    
+    // Validate each field
+    const nameError = validateField('name', formData.name, { required: true, minLength: 1, maxLength: 100 });
+    if (nameError) newErrors.name = nameError;
+    
+    const emailError = validateField('email', formData.email, { 
+      required: true, 
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      customMessage: 'Please enter a valid email address'
+    });
+    if (emailError) newErrors.email = emailError;
+    
+    const addressError = validateField('billingAddress', formData.billingAddress, { 
+      required: true, 
+      minLength: 5, 
+      maxLength: 500 
+    });
+    if (addressError) newErrors.billingAddress = addressError;
+    
+    if (formData.phone) {
+      const phoneError = validateField('phone', formData.phone, { 
+        pattern: /^[\+]?[1-9][\d]{0,15}$/,
+        customMessage: 'Please enter a valid phone number'
+      });
+      if (phoneError) newErrors.phone = phoneError;
     }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    
+    if (formData.gstin) {
+      const gstinError = validateField('gstin', formData.gstin, { 
+        custom: (value: string) => !value || value.length === 15,
+        customMessage: 'GSTIN must be exactly 15 characters'
+      });
+      if (gstinError) newErrors.gstin = gstinError;
     }
-
-    if (!formData.businessName.trim()) {
-      // Business name is optional, will use client name as fallback
-    }
-
-    if (!formData.billingAddress.trim()) {
-      newErrors.billingAddress = 'Billing address is required';
-    }
-
-    if (formData.phone && !/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/[\s\-\(\)]/g, ''))) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-
-    if (formData.gstin && formData.gstin.length > 0 && formData.gstin.length !== 15) {
-      newErrors.gstin = 'GSTIN must be 15 characters long';
-    }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -74,36 +83,19 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     
     if (isSubmitting) return; // Prevent double submission
     
-    if (!validateForm()) {
+    if (!validateFormData()) {
       return;
     }
 
     setIsSubmitting(true);
-    setShowTimeoutWarning(false);
-    
-    // Show timeout warning after 5 seconds
-    const timeoutWarning = setTimeout(() => {
-      setShowTimeoutWarning(true);
-    }, 5000);
     
     try {
-      console.log('=== CLIENT FORM SUBMISSION STARTED ===');
-      console.log('Form data:', formData);
       await onSubmit(formData);
-      console.log('=== CLIENT FORM SUBMISSION COMPLETED ===');
     } catch (error) {
-      console.error('=== CLIENT FORM SUBMISSION FAILED ===');
-      console.error('Error:', error);
-      
-      // Show user-friendly error message
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save client';
-      
-      // Show error message as alert
-      alert(`Error: ${errorMessage}`);
+      // Error is already handled by the error handler in useSupabaseClients
+      console.error('Form submission failed:', error);
     } finally {
-      clearTimeout(timeoutWarning);
       setIsSubmitting(false);
-      setShowTimeoutWarning(false);
     }
   };
 
@@ -123,11 +115,6 @@ export const ClientForm: React.FC<ClientFormProps> = ({
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h2>
             <p className="text-sm text-gray-600 mt-1">Enter client details for future invoices</p>
-            {showTimeoutWarning && (
-              <p className="text-sm text-orange-600 mt-2 font-medium">
-                Saving is taking longer than usual, please wait...
-              </p>
-            )}
           </div>
           <Button
             type="button"
@@ -247,7 +234,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               {actualLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {showTimeoutWarning ? 'Still saving...' : 'Saving...'}
+                  Saving...
                 </>
               ) : (
                 <>

@@ -28,11 +28,14 @@ export const ClientList: React.FC<ClientListProps> = ({
   const handleAddClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
     setIsSubmitting(true);
     try {
-      await onAddClient(clientData);
+      const newClient = await addClient(clientData);
+      if (newClient) {
+        // Show success message is handled by the error handler
+      }
       setShowForm(false);
     } catch (error) {
-      console.error('Error adding client:', error);
-      throw error; // Re-throw to let form handle the error
+      // Error is already handled by the error handler
+      console.error('Failed to add client:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -44,10 +47,11 @@ export const ClientList: React.FC<ClientListProps> = ({
     setIsSubmitting(true);
     try {
       await onUpdateClient(editingClient.id, clientData);
+      // Success message is handled by the error handler
       setEditingClient(null);
     } catch (error) {
-      console.error('Error updating client:', error);
-      throw error; // Re-throw to let form handle the error
+      // Error is already handled by the error handler
+      console.error('Failed to update client:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -56,10 +60,24 @@ export const ClientList: React.FC<ClientListProps> = ({
   const handleDeleteClient = async (id: string) => {
     if (confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
       if (saving) {
-        alert('Please wait for the current operation to complete.');
+        // Show toast instead of alert
+        const event = new CustomEvent('showToast', {
+          detail: {
+            message: 'Please wait for the current operation to complete.',
+            type: 'warning'
+          }
+        });
+        window.dispatchEvent(event);
         return;
       }
-      await onDeleteClient(id);
+      
+      try {
+        await onDeleteClient(id);
+        // Success message is handled by the error handler
+      } catch (error) {
+        // Error is already handled by the error handler
+        console.error('Failed to delete client:', error);
+      }
     }
   };
 

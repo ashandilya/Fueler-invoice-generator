@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { InlineLoginOverlay } from "./components/auth/InlineLoginOverlay";
+import ToastContainer from "./components/common/ToastContainer";
+import OfflineIndicator from "./components/common/OfflineIndicator";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import { useAuth } from "./hooks/useAuth";
+import { useNetworkStatus } from "./hooks/useNetworkStatus";
 import { OnboardingForm } from "./components/auth/OnboardingForm";
 import { Header } from "./components/common/Header";
 import { InvoiceForm } from "./components/invoice/InvoiceForm";
@@ -22,11 +26,18 @@ import { Client } from "./types/client";
 import { Invoice } from "./types/invoice";
 
 function App() {
-  return <AppContent />;
+  return (
+    <ErrorBoundary>
+      <AppContent />
+      <ToastContainer />
+      <OfflineIndicator />
+    </ErrorBoundary>
+  );
 }
 
 function AppContent() {
   const { user, loading, needsOnboarding, completeOnboarding } = useAuth();
+  const { isOnline, isSlowConnection } = useNetworkStatus();
   const { profile } = useCompanyProfile();
   const {
     invoice,
@@ -65,6 +76,20 @@ function AppContent() {
     deleteClient,
   } = useSupabaseClients();
   const { addClientInvoice } = useClientInvoices();
+
+  // Show slow connection warning
+  React.useEffect(() => {
+    if (isSlowConnection) {
+      const event = new CustomEvent('showToast', {
+        detail: {
+          message: 'Slow connection detected. Operations may take longer than usual.',
+          type: 'warning',
+          duration: 4000
+        }
+      });
+      window.dispatchEvent(event);
+    }
+  }, [isSlowConnection]);
 
   // Show loading state
   if (loading) {
