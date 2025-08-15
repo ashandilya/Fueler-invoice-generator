@@ -244,7 +244,7 @@ export const useSupabaseClients = () => {
             errorMessage = err.message;
           } else if (err.message.includes("already exists")) {
             errorMessage = err.message;
-          if (err.message.includes("Authentication check timed out") || 
+          } else if (err.message.includes("Authentication check timed out") || 
               err.message.includes("No active session")) {
             errorMessage = "Authentication expired. Please refresh the page and try again.";
           } else if (err.message.toLowerCase().includes("timed out")) {
@@ -367,7 +367,7 @@ export const useSupabaseClients = () => {
           .from("vendors")
           .update(dbUpdates)
           .eq("vendor_id", id)
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
           .eq("updated_at", currentClient.updatedAt.toISOString());
 
         if (error) {
@@ -401,7 +401,7 @@ export const useSupabaseClients = () => {
             errorMessage = err.message;
           } else if (err.message.includes("already exists")) {
             errorMessage = err.message;
-          if (err.message.includes("duplicate key")) {
+          } else if (err.message.includes("duplicate key")) {
             errorMessage = "A client with this email already exists";
           } else if (err.message.includes("violates check constraint")) {
             errorMessage =
