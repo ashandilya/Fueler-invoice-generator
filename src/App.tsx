@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { InlineLoginOverlay } from "./components/auth/InlineLoginOverlay";
 import ToastContainer from "./components/common/ToastContainer";
 import OfflineIndicator from "./components/common/OfflineIndicator";
