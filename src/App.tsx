@@ -1,3 +1,4 @@
+import React from "react";
 import { useState } from "react";
 import { InlineLoginOverlay } from "./components/auth/InlineLoginOverlay";
 import ToastContainer from "./components/common/ToastContainer";
