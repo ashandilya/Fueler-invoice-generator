@@ -10,12 +10,11 @@ export const InlineLoginOverlay: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      console.log('Starting Google OAuth sign-in...');
       await signInWithGoogle();
     } catch (error) {
       console.error('Sign in failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Sign in failed: ${errorMessage}`);
+      alert(`Sign in failed: ${errorMessage}. Please check your configuration.`);
     } finally {
       setIsLoading(false);
     }

@@ -3,18 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Create Supabase client with simplified, stable configuration
+// Create Supabase client with better configuration
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false, // Disable to prevent URL parsing issues
-    flowType: 'implicit' // Use simpler flow
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   },
-  realtime: {
-    params: {
-      eventsPerSecond: 2
+  global: {
+    headers: {
+      'X-Client-Info': 'invoicce-app'
     }
+  },
+  db: {
+    schema: 'public'
   }
 });
 
@@ -25,18 +28,27 @@ export const isSupabaseConfigured = (): boolean => {
     supabaseAnonKey.length > 20);
 };
 
-// Simplified session getter without retry loops
-export const getCurrentSession = async (): Promise<any> => {
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.error('Session error:', error);
-      return { session: null, user: null };
+// Utility function to get current session with retry
+export const getCurrentSession = async (retries = 3): Promise<any> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`Getting session attempt ${i + 1}/${retries}`);
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error(`Session error on attempt ${i + 1}:`, error);
+        if (i === retries - 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+        continue;
+      }
+      
+      console.log(`Session retrieved successfully on attempt ${i + 1}`);
+      return data;
+    } catch (error) {
+      console.error(`Session attempt ${i + 1} failed:`, error);
+      if (i === retries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
     }
-    return data;
-  } catch (error) {
-    console.error('Failed to get session:', error);
-    return { session: null, user: null };
   }
 };
 

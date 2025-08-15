@@ -17,7 +17,7 @@ export const useAuth = () => {
     // Get initial session
     const getSession = async () => {
       try {
-        console.log('Getting initial session...');
+        console.log('Initializing auth session...');
         
         if (!isSupabaseConfigured()) {
           console.error('Supabase not properly configured');
@@ -27,11 +27,7 @@ export const useAuth = () => {
         }
         
         const { session } = await getCurrentSession();
-        if (session?.user) {
-          console.log('User authenticated:', session.user.email);
-        } else {
-          console.log('No active session');
-        }
+        console.log('Initial session loaded:', session?.user?.email || 'No user');
         setUser(session?.user ?? null);
       } catch (error) {
         console.error('Error getting initial session:', error);
@@ -46,7 +42,6 @@ export const useAuth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email || 'No user');
         setUser(session?.user ?? null);
         setLoading(false);
 
