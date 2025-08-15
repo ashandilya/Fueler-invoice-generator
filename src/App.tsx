@@ -59,6 +59,7 @@ function AppContent() {
   const {
     clients,
     loading: clientsLoading,
+    saving: clientsSaving,
     addClient,
     updateClient,
     deleteClient,
@@ -515,6 +516,7 @@ function AppContent() {
               onUpdateClient={updateClient}
               onDeleteClient={deleteClient}
               loading={clientsLoading}
+              saving={clientsSaving}
             />
           ) : (
             <div className="max-w-5xl mx-auto">

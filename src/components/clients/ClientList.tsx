@@ -10,6 +10,7 @@ interface ClientListProps {
   onUpdateClient: (id: string, updates: Partial<Client>) => Promise<void>;
   onDeleteClient: (id: string) => Promise<void>;
   loading: boolean;
+  saving?: boolean;
 }
 
 export const ClientList: React.FC<ClientListProps> = ({
@@ -18,6 +19,7 @@ export const ClientList: React.FC<ClientListProps> = ({
   onUpdateClient,
   onDeleteClient,
   loading,
+  saving = false,
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -53,6 +55,10 @@ export const ClientList: React.FC<ClientListProps> = ({
 
   const handleDeleteClient = async (id: string) => {
     if (confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+      if (saving) {
+        alert('Please wait for the current operation to complete.');
+        return;
+      }
       await onDeleteClient(id);
     }
   };
@@ -62,7 +68,7 @@ export const ClientList: React.FC<ClientListProps> = ({
       <ClientForm
         onSubmit={handleAddClient}
         onCancel={() => setShowForm(false)}
-        loading={isSubmitting}
+        loading={isSubmitting || saving}
         title="Add New Client"
       />
     );
@@ -74,7 +80,7 @@ export const ClientList: React.FC<ClientListProps> = ({
         client={editingClient}
         onSubmit={handleUpdateClient}
         onCancel={() => setEditingClient(null)}
-        loading={isSubmitting}
+        loading={isSubmitting || saving}
         title="Edit Client"
       />
     );
@@ -87,7 +93,12 @@ export const ClientList: React.FC<ClientListProps> = ({
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Clients</h2>
           <p className="text-sm text-gray-600 mt-1">Manage your client information and history</p>
         </div>
-        <Button onClick={() => setShowForm(true)} icon={Plus} className="w-full sm:w-auto">
+        <Button 
+          onClick={() => setShowForm(true)} 
+          icon={Plus} 
+          className="w-full sm:w-auto"
+          disabled={saving}
+        >
           Add New Client
         </Button>
       </div>
@@ -100,7 +111,12 @@ export const ClientList: React.FC<ClientListProps> = ({
             Get started by adding your first client.
           </p>
           <div className="mt-6">
-            <Button onClick={() => setShowForm(true)} icon={Plus} className="w-full sm:w-auto">
+            <Button 
+              onClick={() => setShowForm(true)} 
+              icon={Plus} 
+              className="w-full sm:w-auto"
+              disabled={saving}
+            >
               Add New Client
             </Button>
           </div>
@@ -121,14 +137,22 @@ export const ClientList: React.FC<ClientListProps> = ({
                 </div>
                 <div className="flex space-x-2 flex-shrink-0 ml-2">
                   <button
-                    onClick={() => setEditingClient(client)}
+                    onClick={() => {
+                      if (saving) {
+                        alert('Please wait for the current operation to complete.');
+                        return;
+                      }
+                      setEditingClient(client);
+                    }}
                     className="text-gray-400 hover:text-blue-600 transition-colors p-1"
+                    disabled={saving}
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteClient(client.id)}
                     className="text-gray-400 hover:text-red-600 transition-colors p-1"
+                    disabled={saving}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -177,6 +201,13 @@ export const ClientList: React.FC<ClientListProps> = ({
               </div>
             </div>
           ))}
+        </div>
+      )}
+      
+      {saving && (
+        <div className="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          <span className="text-sm">Saving...</span>
         </div>
       )}
     </div>

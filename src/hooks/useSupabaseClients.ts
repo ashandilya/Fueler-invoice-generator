@@ -37,6 +37,25 @@ const retryWithBackoff = async <T>(
   throw lastError!;
 };
 
+// Check if user is online
+const checkOnlineStatus = (): boolean => {
+  return navigator.onLine;
+};
+
+// Debounce utility for preventing rapid saves
+const createDebouncer = (delay: number = 5000) => {
+  let lastSaveTime = 0;
+  
+  return {
+    canSave: (): boolean => {
+      const now = Date.now();
+      return now - lastSaveTime > delay;
+    },
+    markSaved: (): void => {
+      lastSaveTime = Date.now();
+    }
+  };
+};
 const convertToAppClient = (dbVendor: DatabaseVendor): Client => ({
   id: dbVendor.vendor_id,
   name: dbVendor.business_name,
@@ -58,6 +77,10 @@ export const useSupabaseClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  
+  // Create debouncer instance
+  const debouncer = createDebouncer(5000);
 
   const fetchClients = useCallback(async () => {
     if (!user) {
@@ -79,28 +102,9 @@ export const useSupabaseClients = () => {
 
       const appClients = data.map(convertToAppClient);
       setClients(appClients);
-
-      // Cache in localStorage
-      localStorage.setItem(`clients_${user.id}`, JSON.stringify(appClients));
     } catch (err) {
       console.error("Error fetching clients:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch clients");
-
-      // Try to load from cache on error
-      try {
-        const cached = localStorage.getItem(`clients_${user.id}`);
-        if (cached) {
-          const cachedClients = JSON.parse(cached, (key, value) => {
-            if (key === "createdAt" || key === "updatedAt") {
-              return new Date(value);
-            }
-            return value;
-          });
-          setClients(cachedClients);
-        }
-      } catch (cacheError) {
-        console.error("Error loading cached clients:", cacheError);
-      }
     } finally {
       setLoading(false);
     }
@@ -111,6 +115,16 @@ export const useSupabaseClients = () => {
       clientData: Omit<Client, "id" | "createdAt" | "updatedAt">
     ): Promise<Client> => {
       if (!user) throw new Error("User not authenticated");
+
+      // Check online status
+      if (!checkOnlineStatus()) {
+        throw new Error("You appear to be offline. Please check your internet connection and try again.");
+      }
+
+      // Check debounce
+      if (!debouncer.canSave()) {
+        throw new Error("Too many requests. Please wait a moment before saving again.");
+      }
 
       // Check Supabase configuration
       if (!isSupabaseConfigured()) {
@@ -133,8 +147,16 @@ export const useSupabaseClients = () => {
 
       console.log('Starting client creation process...');
       setError(null);
+      setSaving(true);
+      
+      // Set up timeout warning
+      const timeoutWarning = setTimeout(() => {
+        console.log("Saving is taking longer than usual...");
+      }, 5000);
 
       try {
+        // Mark save attempt
+        debouncer.markSaved();
 
         // Use retry mechanism for the entire operation
         const newClient = await retryWithBackoff(async () => {
@@ -178,6 +200,18 @@ export const useSupabaseClients = () => {
 
           if (error) {
             console.error("Database insert error:", error);
+            
+            // Handle specific error types
+            if (error.code === '23505') { // Unique constraint violation
+              throw new Error("A client with this email already exists");
+            }
+            if (error.code === '23514') { // Check constraint violation
+              throw new Error("Please check that all required fields are filled correctly");
+            }
+            if (error.message.includes('rate limit')) {
+              throw new Error("Too many requests. Please wait a moment before saving again.");
+            }
+            
             throw error;
           }
 
@@ -189,24 +223,27 @@ export const useSupabaseClients = () => {
           return convertToAppClient(data);
         }, 3, 1000); // 3 retries with 1s, 2s, 4s delays
 
+        clearTimeout(timeoutWarning);
         console.log('Client creation completed successfully');
 
+        // Update local state immediately with the new client
         setClients((prev) => [newClient, ...prev]);
 
-        // Update cache
-        const updatedClients = [newClient, ...clients];
-        localStorage.setItem(
-          `clients_${user.id}`,
-          JSON.stringify(updatedClients)
-        );
 
         return newClient;
       } catch (err) {
+        clearTimeout(timeoutWarning);
         console.error("Error adding client:", err);
 
         // Provide more specific error messages
         let errorMessage = "Failed to add client";
         if (err instanceof Error) {
+          if (err.message.includes("offline") || err.message.includes("internet connection")) {
+            errorMessage = err.message;
+          } else if (err.message.includes("Too many requests")) {
+            errorMessage = err.message;
+          } else if (err.message.includes("already exists")) {
+            errorMessage = err.message;
           if (err.message.includes("Authentication check timed out") || 
               err.message.includes("No active session")) {
             errorMessage = "Authentication expired. Please refresh the page and try again.";
@@ -243,15 +280,26 @@ export const useSupabaseClients = () => {
 
         setError(errorMessage);
         throw err;
+      } finally {
+        setSaving(false);
       }
     },
-    [user, clients]
+    [user, debouncer]
   );
 
   const updateClient = useCallback(
     async (id: string, updates: Partial<Client>): Promise<void> => {
       if (!user) throw new Error("User not authenticated");
 
+      // Check online status
+      if (!checkOnlineStatus()) {
+        throw new Error("You appear to be offline. Please check your internet connection and try again.");
+      }
+
+      // Check debounce
+      if (!debouncer.canSave()) {
+        throw new Error("Too many requests. Please wait a moment before saving again.");
+      }
       // Validate updates if they contain required fields
       if (updates.name !== undefined && !updates.name.trim()) {
         throw new Error("Client name cannot be empty");
@@ -272,7 +320,14 @@ export const useSupabaseClients = () => {
 
       try {
         setError(null);
+        setSaving(true);
+        debouncer.markSaved();
 
+        // Get current client for version check
+        const currentClient = clients.find(c => c.id === id);
+        if (!currentClient) {
+          throw new Error("Client not found");
+        }
         // Prepare database updates with proper field mapping
         const dbUpdates: any = {
           updated_at: new Date().toISOString(),
@@ -307,14 +362,25 @@ export const useSupabaseClients = () => {
           dbUpdates.country = updates.country || "India";
         }
 
+        // Check for conflicts by comparing updated_at timestamp
         const { error } = await supabase
           .from("vendors")
           .update(dbUpdates)
           .eq("vendor_id", id)
           .eq("user_id", user.id);
+          .eq("updated_at", currentClient.updatedAt.toISOString());
 
-        if (error) throw error;
+        if (error) {
+          if (error.code === '23505') {
+            throw new Error("A client with this email already exists");
+          }
+          if (error.message.includes('rate limit')) {
+            throw new Error("Too many requests. Please wait a moment before saving again.");
+          }
+          throw error;
+        }
 
+        // Update local state
         setClients((prev) =>
           prev.map((client) =>
             client.id === id
@@ -323,22 +389,18 @@ export const useSupabaseClients = () => {
           )
         );
 
-        // Update cache
-        const updatedClients = clients.map((client) =>
-          client.id === id
-            ? { ...client, ...updates, updatedAt: new Date() }
-            : client
-        );
-        localStorage.setItem(
-          `clients_${user.id}`,
-          JSON.stringify(updatedClients)
-        );
       } catch (err) {
         console.error("Error updating client:", err);
 
         // Provide more specific error messages
         let errorMessage = "Failed to update client";
         if (err instanceof Error) {
+          if (err.message.includes("offline") || err.message.includes("internet connection")) {
+            errorMessage = err.message;
+          } else if (err.message.includes("Too many requests")) {
+            errorMessage = err.message;
+          } else if (err.message.includes("already exists")) {
+            errorMessage = err.message;
           if (err.message.includes("duplicate key")) {
             errorMessage = "A client with this email already exists";
           } else if (err.message.includes("violates check constraint")) {
@@ -357,17 +419,24 @@ export const useSupabaseClients = () => {
 
         setError(errorMessage);
         throw err;
+      } finally {
+        setSaving(false);
       }
     },
-    [user, clients]
+    [user, clients, debouncer]
   );
 
   const deleteClient = useCallback(
     async (id: string): Promise<void> => {
       if (!user) throw new Error("User not authenticated");
 
+      // Check online status
+      if (!checkOnlineStatus()) {
+        throw new Error("You appear to be offline. Please check your internet connection and try again.");
+      }
       try {
         setError(null);
+        setSaving(true);
 
         const { error } = await supabase
           .from("vendors")
@@ -377,23 +446,28 @@ export const useSupabaseClients = () => {
 
         if (error) throw error;
 
+        // Update local state
         setClients((prev) => prev.filter((client) => client.id !== id));
 
-        // Update cache
-        const updatedClients = clients.filter((client) => client.id !== id);
-        localStorage.setItem(
-          `clients_${user.id}`,
-          JSON.stringify(updatedClients)
-        );
       } catch (err) {
         console.error("Error deleting client:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to delete client"
-        );
+        
+        let errorMessage = "Failed to delete client";
+        if (err instanceof Error) {
+          if (err.message.includes("offline") || err.message.includes("internet connection")) {
+            errorMessage = err.message;
+          } else {
+            errorMessage = err.message;
+          }
+        }
+        
+        setError(errorMessage);
         throw err;
+      } finally {
+        setSaving(false);
       }
     },
-    [user, clients]
+    [user]
   );
 
   const getClientById = useCallback(
@@ -407,28 +481,11 @@ export const useSupabaseClients = () => {
     fetchClients();
   }, [fetchClients]);
 
-  useEffect(() => {
-    if (user) {
-      try {
-        const cached = localStorage.getItem(`clients_${user.id}`);
-        if (cached) {
-          const cachedClients = JSON.parse(cached, (key, value) => {
-            if (key === "createdAt" || key === "updatedAt") {
-              return new Date(value);
-            }
-            return value;
-          });
-          setClients(cachedClients);
-        }
-      } catch (error) {
-        console.error("Error loading cached clients:", error);
-      }
-    }
-  }, [user]);
 
   return {
     clients,
     loading,
+    saving,
     error,
     addClient,
     updateClient,

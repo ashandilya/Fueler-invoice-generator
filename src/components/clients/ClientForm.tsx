@@ -34,6 +34,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -78,6 +79,13 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     }
 
     setIsSubmitting(true);
+    setShowTimeoutWarning(false);
+    
+    // Show timeout warning after 5 seconds
+    const timeoutWarning = setTimeout(() => {
+      setShowTimeoutWarning(true);
+    }, 5000);
+    
     try {
       console.log('=== CLIENT FORM SUBMISSION STARTED ===');
       console.log('Form data:', formData);
@@ -90,19 +98,12 @@ export const ClientForm: React.FC<ClientFormProps> = ({
       // Show user-friendly error message
       const errorMessage = error instanceof Error ? error.message : 'Failed to save client';
       
-      // Show specific error messages
-      if (errorMessage.includes('Authentication expired') || 
-          errorMessage.includes('refresh the page')) {
-        alert('Your session has expired. Please refresh the page and try again.');
-      } else if (errorMessage.includes('configuration error')) {
-        alert('There is a configuration issue. Please contact support.');
-      } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
-        alert('Network connection issue. Please check your internet connection and try again.');
-      } else {
-        alert(`Error: ${errorMessage}`);
-      }
+      // Show error message as alert
+      alert(`Error: ${errorMessage}`);
     } finally {
+      clearTimeout(timeoutWarning);
       setIsSubmitting(false);
+      setShowTimeoutWarning(false);
     }
   };
 
@@ -122,6 +123,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h2>
             <p className="text-sm text-gray-600 mt-1">Enter client details for future invoices</p>
+            {showTimeoutWarning && (
+              <p className="text-sm text-orange-600 mt-2 font-medium">
+                Saving is taking longer than usual, please wait...
+              </p>
+            )}
           </div>
           <Button
             type="button"
@@ -241,7 +247,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               {actualLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
+                  {showTimeoutWarning ? 'Still saving...' : 'Saving...'}
                 </>
               ) : (
                 <>
