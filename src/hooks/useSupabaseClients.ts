@@ -158,70 +158,55 @@ export const useSupabaseClients = () => {
         // Mark save attempt
         debouncer.markSaved();
 
-        // Use retry mechanism for the entire operation
-        const newClient = await retryWithBackoff(async () => {
-          // Step 1: Verify authentication with retry
-          console.log('Verifying authentication...');
-          const { session } = await getCurrentSession();
-          
-          if (!session?.user) {
-            throw new Error("No active session. Please sign in again.");
-          }
-          
-          if (session.user.id !== user.id) {
-            throw new Error("Session user mismatch. Please refresh and try again.");
-          }
-          
-          console.log('Authentication verified for user:', session.user.email);
-          
-          // Step 2: Prepare client data
-          const dbClient = {
-            user_id: user.id,
-            vendor_name: clientData.name.trim(),
-            business_name: (clientData.businessName || clientData.name).trim(),
-            email: clientData.email.toLowerCase().trim(),
-            phone: clientData.phone?.trim() || null,
-            gstin: clientData.gstin?.trim() || null,
-            billing_address: clientData.billingAddress.trim(),
-            city: clientData.city?.trim() || null,
-            state: clientData.state?.trim() || null,
-            country: clientData.country?.trim() || "India",
-          };
-          
-          console.log('Prepared client data:', dbClient);
-          
-          // Step 3: Insert into database
-          console.log('Inserting client into database...');
-          const { data, error } = await supabase
-            .from("vendors")
-            .insert(dbClient)
-            .select()
-            .single();
+        // Simplified direct database operation
+        console.log('Inserting client into database...');
+        
+        // Prepare client data
+        const dbClient = {
+          user_id: user.id,
+          vendor_name: clientData.name.trim(),
+          business_name: (clientData.businessName || clientData.name).trim(),
+          email: clientData.email.toLowerCase().trim(),
+          phone: clientData.phone?.trim() || null,
+          gstin: clientData.gstin?.trim() || null,
+          billing_address: clientData.billingAddress.trim(),
+          city: clientData.city?.trim() || null,
+          state: clientData.state?.trim() || null,
+          country: clientData.country?.trim() || "India",
+        };
+        
+        console.log('Prepared client data:', dbClient);
+        
+        // Insert into database with single attempt
+        const { data, error } = await supabase
+          .from("vendors")
+          .insert(dbClient)
+          .select()
+          .single();
 
-          if (error) {
-            console.error("Database insert error:", error);
-            
-            // Handle specific error types
-            if (error.code === '23505') { // Unique constraint violation
-              throw new Error("A client with this email already exists");
-            }
-            if (error.code === '23514') { // Check constraint violation
-              throw new Error("Please check that all required fields are filled correctly");
-            }
-            if (error.message.includes('rate limit')) {
-              throw new Error("Too many requests. Please wait a moment before saving again.");
-            }
-            
-            throw error;
+        if (error) {
+          console.error("Database insert error:", error);
+          
+          // Handle specific error types
+          if (error.code === '23505') { // Unique constraint violation
+            throw new Error("A client with this email already exists");
           }
-
-          if (!data) {
-            throw new Error("No data returned from insert operation");
+          if (error.code === '23514') { // Check constraint violation
+            throw new Error("Please check that all required fields are filled correctly");
+          }
+          if (error.message.includes('rate limit')) {
+            throw new Error("Too many requests. Please wait a moment before saving again.");
           }
           
-          console.log('Client inserted successfully:', data);
-          return convertToAppClient(data);
-        }, 3, 1000); // 3 retries with 1s, 2s, 4s delays
+          throw error;
+        }
+
+        if (!data) {
+          throw new Error("No data returned from insert operation");
+        }
+        
+        console.log('Client inserted successfully:', data);
+        const newClient = convertToAppClient(data);
 
         clearTimeout(timeoutWarning);
         console.log('Client creation completed successfully');
