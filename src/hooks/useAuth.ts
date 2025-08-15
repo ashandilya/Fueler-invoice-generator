@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, getCurrentSession } from '../lib/supabase';
 
 interface UserProfile {
   name: string;
@@ -16,9 +16,25 @@ export const useAuth = () => {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        console.log('Initializing auth session...');
+        
+        if (!isSupabaseConfigured()) {
+          console.error('Supabase not properly configured');
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        const { session } = await getCurrentSession();
+        console.log('Initial session loaded:', session?.user?.email || 'No user');
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     getSession();

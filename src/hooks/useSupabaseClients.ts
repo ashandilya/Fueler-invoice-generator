@@ -1,8 +1,41 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
-import { supabase, DatabaseVendor } from "../lib/supabase";
+import { supabase, DatabaseVendor, isSupabaseConfigured, getCurrentSession } from "../lib/supabase";
 import { useAuth } from "./useAuth";
 import { Client } from "../types/client";
+
+// Retry utility with exponential backoff
+const retryWithBackoff = async <T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> => {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt}/${maxRetries}`);
+      const result = await operation();
+      console.log(`Operation succeeded on attempt ${attempt}`);
+      return result;
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`Attempt ${attempt} failed:`, error);
+      
+      if (attempt === maxRetries) {
+        console.error('All retry attempts failed');
+        throw lastError;
+      }
+      
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = baseDelay * Math.pow(2, attempt - 1);
+      console.log(`Waiting ${delay}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
+};
 
 const convertToAppClient = (dbVendor: DatabaseVendor): Client => ({
   id: dbVendor.vendor_id,
@@ -79,56 +112,12 @@ export const useSupabaseClients = () => {
     ): Promise<Client> => {
       if (!user) throw new Error("User not authenticated");
 
-      if (
-        !import.meta.env.VITE_SUPABASE_URL ||
-        !import.meta.env.VITE_SUPABASE_ANON_KEY
-      ) {
-        throw new Error(
-          "Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
-        );
+      // Check Supabase configuration
+      if (!isSupabaseConfigured()) {
+        throw new Error("Supabase is not properly configured. Please check your environment variables.");
       }
 
-      const withTimeout = async <T>(
-        promise: Promise<T> | PromiseLike<T>,
-        ms: number,
-        message: string
-      ): Promise<T> => {
-        return new Promise<T>((resolve, reject) => {
-          const timeoutId = setTimeout(() => reject(new Error(message)), ms);
-          Promise.resolve(promise)
-            .then((result) => {
-              clearTimeout(timeoutId);
-              resolve(result);
-            })
-            .catch((error: unknown) => {
-              clearTimeout(timeoutId);
-              reject(error);
-            });
-        });
-      };
-
-      const {
-        data: { session },
-        error: sessionError,
-      } = await withTimeout<
-        Awaited<ReturnType<typeof supabase.auth.getSession>>
-      >(
-        supabase.auth.getSession(),
-        10000,
-        "Authentication check timed out. Please check your network connection and try again."
-      );
-
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        throw new Error(
-          "Authentication session invalid. Please refresh and try again."
-        );
-      }
-
-      if (!session?.user) {
-        throw new Error("No active session. Please sign in again.");
-      }
-
+      // Validate input data
       if (!clientData.name.trim()) {
         throw new Error("Client name is required");
       }
@@ -142,40 +131,65 @@ export const useSupabaseClients = () => {
         throw new Error("Billing address is required");
       }
 
+      console.log('Starting client creation process...');
+      setError(null);
+
       try {
-        setError(null);
-        const dbClient = {
-          user_id: user.id,
-          vendor_name: clientData.name,
-          business_name: clientData.businessName || clientData.name,
-          email: clientData.email.toLowerCase().trim(),
-          phone: clientData.phone || null,
-          gstin: clientData.gstin || null,
-          billing_address: clientData.billingAddress,
-          city: clientData.city || null,
-          state: clientData.state || null,
-          country: clientData.country || "India",
-        };
 
-        const { data, error } = await withTimeout<
-          PostgrestSingleResponse<DatabaseVendor>
-        >(
-          supabase.from("vendors").insert(dbClient).select().single(),
-          15000,
-          "Saving client timed out. Please check your network/Supabase configuration and try again."
-        );
+        // Use retry mechanism for the entire operation
+        const newClient = await retryWithBackoff(async () => {
+          // Step 1: Verify authentication with retry
+          console.log('Verifying authentication...');
+          const { session } = await getCurrentSession();
+          
+          if (!session?.user) {
+            throw new Error("No active session. Please sign in again.");
+          }
+          
+          if (session.user.id !== user.id) {
+            throw new Error("Session user mismatch. Please refresh and try again.");
+          }
+          
+          console.log('Authentication verified for user:', session.user.email);
+          
+          // Step 2: Prepare client data
+          const dbClient = {
+            user_id: user.id,
+            vendor_name: clientData.name.trim(),
+            business_name: (clientData.businessName || clientData.name).trim(),
+            email: clientData.email.toLowerCase().trim(),
+            phone: clientData.phone?.trim() || null,
+            gstin: clientData.gstin?.trim() || null,
+            billing_address: clientData.billingAddress.trim(),
+            city: clientData.city?.trim() || null,
+            state: clientData.state?.trim() || null,
+            country: clientData.country?.trim() || "India",
+          };
+          
+          console.log('Prepared client data:', dbClient);
+          
+          // Step 3: Insert into database
+          console.log('Inserting client into database...');
+          const { data, error } = await supabase
+            .from("vendors")
+            .insert(dbClient)
+            .select()
+            .single();
 
-        if (error) {
-          console.error("Supabase insert error:", error);
-          throw error;
-        }
+          if (error) {
+            console.error("Database insert error:", error);
+            throw error;
+          }
 
-        if (!data) {
-          throw new Error("No data returned from insert operation");
-        }
+          if (!data) {
+            throw new Error("No data returned from insert operation");
+          }
+          
+          console.log('Client inserted successfully:', data);
+          return convertToAppClient(data);
+        }, 3, 1000); // 3 retries with 1s, 2s, 4s delays
 
-        const newClient = convertToAppClient(data);
-        console.log(`Client saved : ${newClient}`);
+        console.log('Client creation completed successfully');
 
         setClients((prev) => [newClient, ...prev]);
 
@@ -189,12 +203,14 @@ export const useSupabaseClients = () => {
         return newClient;
       } catch (err) {
         console.error("Error adding client:", err);
-        console.error("Full error object:", JSON.stringify(err, null, 2));
 
         // Provide more specific error messages
         let errorMessage = "Failed to add client";
         if (err instanceof Error) {
-          if (err.message.toLowerCase().includes("timed out")) {
+          if (err.message.includes("Authentication check timed out") || 
+              err.message.includes("No active session")) {
+            errorMessage = "Authentication expired. Please refresh the page and try again.";
+          } else if (err.message.toLowerCase().includes("timed out")) {
             errorMessage = err.message;
           } else if (
             err.message.includes("duplicate key") ||
@@ -218,6 +234,8 @@ export const useSupabaseClients = () => {
           } else if (err.message.includes("JWT")) {
             errorMessage =
               "Authentication expired. Please refresh the page and try again.";
+          } else if (err.message.includes("not properly configured")) {
+            errorMessage = "Application configuration error. Please contact support.";
           } else {
             errorMessage = err.message;
           }

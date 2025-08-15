@@ -3,7 +3,54 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create Supabase client with better configuration
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'invoicce-app'
+    }
+  },
+  db: {
+    schema: 'public'
+  }
+});
+
+// Utility function to check if Supabase is properly configured
+export const isSupabaseConfigured = (): boolean => {
+  return !!(supabaseUrl && supabaseAnonKey && 
+    supabaseUrl.startsWith('https://') && 
+    supabaseAnonKey.length > 20);
+};
+
+// Utility function to get current session with retry
+export const getCurrentSession = async (retries = 3): Promise<any> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`Getting session attempt ${i + 1}/${retries}`);
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error(`Session error on attempt ${i + 1}:`, error);
+        if (i === retries - 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+        continue;
+      }
+      
+      console.log(`Session retrieved successfully on attempt ${i + 1}`);
+      return data;
+    } catch (error) {
+      console.error(`Session attempt ${i + 1} failed:`, error);
+      if (i === retries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+    }
+  }
+};
 
 // Database types
 export interface User {

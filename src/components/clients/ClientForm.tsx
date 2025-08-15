@@ -77,34 +77,30 @@ export const ClientForm: React.FC<ClientFormProps> = ({
       return;
     }
 
-    console.log('Form validation passed, starting submission...');
     setIsSubmitting(true);
     try {
-      console.log('Submitting client form...');
+      console.log('=== CLIENT FORM SUBMISSION STARTED ===');
+      console.log('Form data:', formData);
       await onSubmit(formData);
-      console.log('Client saved successfully');
+      console.log('=== CLIENT FORM SUBMISSION COMPLETED ===');
     } catch (error) {
-      console.error('Form submission error:', error);
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
+      console.error('=== CLIENT FORM SUBMISSION FAILED ===');
+      console.error('Error:', error);
       
       // Show user-friendly error message
       const errorMessage = error instanceof Error ? error.message : 'Failed to save client';
       
-      // More user-friendly error display
-      if (errorMessage.includes('email')) {
-        alert('Please check the email address format and try again.');
-      } else if (errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
-        alert('A client with this email already exists. Please use a different email address.');
-      } else if (errorMessage.includes('required')) {
-        alert('Please fill in all required fields and try again.');
+      // Show specific error messages
+      if (errorMessage.includes('Authentication expired') || 
+          errorMessage.includes('refresh the page')) {
+        alert('Your session has expired. Please refresh the page and try again.');
+      } else if (errorMessage.includes('configuration error')) {
+        alert('There is a configuration issue. Please contact support.');
+      } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+        alert('Network connection issue. Please check your internet connection and try again.');
       } else {
-        alert(`Error saving client: ${errorMessage}`);
+        alert(`Error: ${errorMessage}`);
       }
-      
-      // Form stays open on error so user can fix issues
     } finally {
       setIsSubmitting(false);
     }
