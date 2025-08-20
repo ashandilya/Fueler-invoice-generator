@@ -280,65 +280,6 @@ export const useSupabaseClients = () => {
     },
     [user, debouncer, handleAsyncOperation, validateForm]
   );
-        async () => {
-          // Check debounce
-          if (!debouncer.canSave()) {
-            throw new Error("Too many requests. Please wait a moment before saving again.");
-          }
-
-          // Mark save attempt
-          debouncer.markSaved();
-
-          // Prepare client data
-          const dbClient = {
-            user_id: user.id,
-            vendor_name: clientData.name.trim(),
-            business_name: (clientData.businessName || clientData.name).trim(),
-            email: clientData.email.toLowerCase().trim(),
-            phone: clientData.phone?.trim() || null,
-            gstin: clientData.gstin?.trim() || null,
-            billing_address: clientData.billingAddress.trim(),
-            city: clientData.city?.trim() || null,
-            state: clientData.state?.trim() || null,
-            country: clientData.country?.trim() || "India",
-          };
-          
-          const { data, error } = await supabase
-            .from("vendors")
-            .insert(dbClient)
-            .select()
-            .single();
-
-          if (error) {
-            throw error;
-          }
-
-          if (!data) {
-            throw new Error("No data returned from insert operation");
-          }
-          
-          return convertToAppClient(data);
-        },
-        'addClient',
-        {
-          showSuccess: true,
-          successMessage: 'Client saved successfully!',
-          retries: 1
-        }
-      );
-
-      setSaving(false);
-
-      if (result) {
-        // Update local state with the new client
-        setClients((prev) => [result, ...prev]);
-        return result;
-      }
-
-      throw new Error("Failed to create client");
-    },
-    [user, debouncer, handleAsyncOperation, validateForm]
-  );
 
   const updateClient = useCallback(
     async (id: string, updates: Partial<Client>): Promise<void> => {
