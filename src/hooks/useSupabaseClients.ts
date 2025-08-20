@@ -278,14 +278,6 @@ export const useSupabaseClients = () => {
             {
               showSuccess: true,
               successMessage: 'Client saved successfully!',
-              // Provide more specific error messages
-              if (error.code === 'PGRST301') {
-                throw new Error("Database table not found. Please contact support.");
-              } else if (error.code === '23505') {
-                throw new Error("A client with this email already exists.");
-              } else if (error.message.includes('JWT')) {
-                throw new Error("Authentication expired. Please refresh the page and try again.");
-              }
               retries: 1
             }
           ),
