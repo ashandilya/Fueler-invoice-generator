@@ -5,6 +5,34 @@ import { useAuth } from "./useAuth";
 import { useErrorHandler } from "./useErrorHandler";
 import { Client } from "../types/client";
 
+// Add timeout wrapper for operations
+const withTimeout = async <T>(
+  operation: () => Promise<T>,
+  timeoutMs: number = 7000,
+  operationName: string = 'Operation'
+): Promise<T> => {
+  console.log(`🚀 Starting ${operationName} with ${timeoutMs}ms timeout`);
+  
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      console.error(`⏰ ${operationName} timed out after ${timeoutMs}ms`);
+      reject(new Error(`${operationName} timed out after ${timeoutMs / 1000} seconds. Please check your internet connection and try again.`));
+    }, timeoutMs);
+
+    operation()
+      .then((result) => {
+        console.log(`✅ ${operationName} completed successfully`);
+        clearTimeout(timeoutId);
+        resolve(result);
+      })
+      .catch((error) => {
+        console.error(`❌ ${operationName} failed:`, error);
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+};
+
 // Retry utility with exponential backoff
 const retryWithBackoff = async <T>(
   operation: () => Promise<T>,
@@ -139,18 +167,119 @@ export const useSupabaseClients = () => {
     async (
       clientData: Omit<Client, "id" | "createdAt" | "updatedAt">
     ): Promise<Client> => {
+      console.log('🔄 addClient called with data:', clientData);
+      
       if (!user) throw new Error("User not authenticated");
+
+      console.log('👤 User authenticated:', user.id);
 
       // Validate form data
       const validationErrors = validateForm(clientData, clientValidationRules);
       if (Object.keys(validationErrors).length > 0) {
+        console.error('❌ Validation failed:', validationErrors);
         const firstError = Object.values(validationErrors)[0];
         throw new Error(firstError);
       }
+      
+      console.log('✅ Validation passed');
 
       setSaving(true);
+      console.log('🔄 Setting saving state to true');
 
-      const result = await handleAsyncOperation(
+      try {
+        console.log('🚀 Starting database operation...');
+        
+        const result = await withTimeout(
+          () => handleAsyncOperation(
+            async () => {
+              console.log('🔍 Checking debounce...');
+              // Check debounce
+              if (!debouncer.canSave()) {
+                throw new Error("Too many requests. Please wait a moment before saving again.");
+              }
+
+              // Mark save attempt
+              debouncer.markSaved();
+              console.log('✅ Debounce check passed');
+
+              // Prepare client data
+              const dbClient = {
+                user_id: user.id,
+                vendor_name: clientData.name.trim(),
+                business_name: (clientData.businessName || clientData.name).trim(),
+                email: clientData.email.toLowerCase().trim(),
+                phone: clientData.phone?.trim() || null,
+                gstin: clientData.gstin?.trim() || null,
+                billing_address: clientData.billingAddress.trim(),
+                city: clientData.city?.trim() || null,
+                state: clientData.state?.trim() || null,
+                country: clientData.country?.trim() || "India",
+              };
+              
+              console.log('📝 Prepared database client data:', dbClient);
+              console.log('🌐 Making Supabase request...');
+              
+              const { data, error } = await supabase
+                .from("vendors")
+                .insert(dbClient)
+                .select()
+                .single();
+
+              console.log('📡 Supabase response received');
+              console.log('📊 Data:', data);
+              console.log('⚠️ Error:', error);
+
+              if (error) {
+                console.error('❌ Supabase error:', error);
+                throw error;
+              }
+
+              if (!data) {
+                console.error('❌ No data returned from insert operation');
+                throw new Error("No data returned from insert operation");
+              }
+              
+              console.log('✅ Database operation successful');
+              return convertToAppClient(data);
+            },
+            'addClient',
+            {
+              showSuccess: true,
+              successMessage: 'Client saved successfully!',
+              retries: 1
+            }
+          ),
+          7000, // 7 second timeout
+          'Add Client Operation'
+        );
+
+        console.log('🎉 Operation completed, result:', result);
+        setSaving(false);
+
+        if (result) {
+          // Update local state with the new client
+          console.log('🔄 Updating local state...');
+          setClients((prev) => [result, ...prev]);
+          console.log('✅ Local state updated');
+          return result;
+        }
+
+        throw new Error("Failed to create client");
+        
+      } catch (error) {
+        console.error('💥 Final error in addClient:', error);
+        setSaving(false);
+        
+        // Show timeout-specific error message
+        if (error instanceof Error && error.message.includes('timed out')) {
+          alert(`⏰ Operation Timeout\n\n${error.message}\n\nPossible causes:\n• Slow internet connection\n• Database server issues\n• Network firewall blocking requests`);
+        }
+        
+        throw error;
+      }
+    },
+    [user, debouncer, handleAsyncOperation, validateForm]
+  );
         async () => {
           // Check debounce
           if (!debouncer.canSave()) {

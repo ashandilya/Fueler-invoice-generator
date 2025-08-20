@@ -16,18 +16,24 @@ export const useAuth = () => {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
+      console.log('🔍 useAuth: Getting initial session...');
       try {
         if (!isSupabaseConfigured()) {
+          console.log('⚠️ Supabase not configured');
           setUser(null);
           setLoading(false);
           return;
         }
         
+        console.log('📡 Fetching session...');
         const { session } = await getCurrentSession();
+        console.log('👤 Session user:', session?.user?.email || 'No user');
         setUser(session?.user ?? null);
       } catch (error) {
+        console.error('❌ Error getting session:', error);
         setUser(null);
       } finally {
+        console.log('✅ Auth loading complete');
         setLoading(false);
       }
     };

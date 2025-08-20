@@ -81,22 +81,34 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('📝 Form submission started');
+    console.log('📊 Form data:', formData);
+    
     if (isSubmitting) return; // Prevent double submission
     
+    console.log('🔍 Validating form data...');
+    
     if (!validateFormData()) {
+      console.log('❌ Form validation failed');
       return;
     }
+    
+    console.log('✅ Form validation passed');
 
     setIsSubmitting(true);
+    console.log('🔄 Setting isSubmitting to true');
     
     try {
       // Add a small delay to prevent rapid submissions
       await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('🚀 Calling onSubmit...');
       await onSubmit(formData);
+      console.log('✅ onSubmit completed successfully');
     } catch (error) {
       // Error is already handled by the error handler in useSupabaseClients
-      console.error('Form submission failed:', error);
+      console.error('💥 Form submission failed:', error);
     } finally {
+      console.log('🔄 Setting isSubmitting to false');
       setIsSubmitting(false);
     }
   };

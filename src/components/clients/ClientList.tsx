@@ -26,17 +26,22 @@ export const ClientList: React.FC<ClientListProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
+    console.log('🎯 ClientList: handleAddClient called');
     setIsSubmitting(true);
     try {
+      console.log('🚀 ClientList: Calling onAddClient...');
       const newClient = await onAddClient(clientData);
       if (newClient) {
+        console.log('✅ ClientList: Client added successfully:', newClient.name);
         // Show success message is handled by the error handler
       }
+      console.log('🔄 ClientList: Closing form...');
       setShowForm(false);
     } catch (error) {
       // Error is already handled by the error handler
-      console.error('Failed to add client:', error);
+      console.error('💥 ClientList: Failed to add client:', error);
     } finally {
+      console.log('🔄 ClientList: Setting isSubmitting to false');
       setIsSubmitting(false);
     }
   };
