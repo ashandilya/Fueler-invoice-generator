@@ -29,25 +29,21 @@ export const isSupabaseConfigured = (): boolean => {
 };
 
 // Utility function to get current session with retry
-export const getCurrentSession = async (retries = 3): Promise<any> => {
+export const getCurrentSession = async (retries = 2): Promise<any> => {
   for (let i = 0; i < retries; i++) {
     try {
-      console.log(`Getting session attempt ${i + 1}/${retries}`);
       const { data, error } = await supabase.auth.getSession();
       
       if (error) {
-        console.error(`Session error on attempt ${i + 1}:`, error);
         if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 500)); // Shorter delay
         continue;
       }
       
-      console.log(`Session retrieved successfully on attempt ${i + 1}`);
       return data;
     } catch (error) {
-      console.error(`Session attempt ${i + 1} failed:`, error);
       if (i === retries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 500)); // Shorter delay
     }
   }
 };

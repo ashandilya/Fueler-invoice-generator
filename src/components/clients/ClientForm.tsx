@@ -90,6 +90,8 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     setIsSubmitting(true);
     
     try {
+      // Add a small delay to prevent rapid submissions
+      await new Promise(resolve => setTimeout(resolve, 100));
       await onSubmit(formData);
     } catch (error) {
       // Error is already handled by the error handler in useSupabaseClients

@@ -284,15 +284,17 @@ export class ErrorHandler {
 
   // Show user-friendly notifications
   private showUserNotification(error: AppError): void {
-    // This will be implemented with the toast system
-    const event = new CustomEvent('showErrorToast', {
-      detail: {
-        message: error.userMessage,
-        type: error.type,
-        severity: error.severity
-      }
-    });
-    window.dispatchEvent(event);
+    // Only show notifications for important errors to reduce noise
+    if (error.severity === ErrorSeverity.HIGH || error.severity === ErrorSeverity.CRITICAL) {
+      const event = new CustomEvent('showErrorToast', {
+        detail: {
+          message: error.userMessage,
+          type: error.type,
+          severity: error.severity
+        }
+      });
+      window.dispatchEvent(event);
+    }
   }
 
   // Retry mechanism

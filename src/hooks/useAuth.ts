@@ -17,20 +17,15 @@ export const useAuth = () => {
     // Get initial session
     const getSession = async () => {
       try {
-        console.log('Initializing auth session...');
-        
         if (!isSupabaseConfigured()) {
-          console.error('Supabase not properly configured');
           setUser(null);
           setLoading(false);
           return;
         }
         
         const { session } = await getCurrentSession();
-        console.log('Initial session loaded:', session?.user?.email || 'No user');
         setUser(session?.user ?? null);
       } catch (error) {
-        console.error('Error getting initial session:', error);
         setUser(null);
       } finally {
         setLoading(false);

@@ -8,29 +8,24 @@ import { Client } from "../types/client";
 // Retry utility with exponential backoff
 const retryWithBackoff = async <T>(
   operation: () => Promise<T>,
-  maxRetries: number = 3,
+  maxRetries: number = 2,
   baseDelay: number = 1000
 ): Promise<T> => {
   let lastError: Error;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Attempt ${attempt}/${maxRetries}`);
       const result = await operation();
-      console.log(`Operation succeeded on attempt ${attempt}`);
       return result;
     } catch (error) {
       lastError = error as Error;
-      console.error(`Attempt ${attempt} failed:`, error);
       
       if (attempt === maxRetries) {
-        console.error('All retry attempts failed');
         throw lastError;
       }
       
       // Exponential backoff: 1s, 2s, 4s
-      const delay = baseDelay * Math.pow(2, attempt - 1);
-      console.log(`Waiting ${delay}ms before retry...`);
+      const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), 3000); // Cap at 3s
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -197,10 +192,9 @@ export const useSupabaseClients = () => {
         },
         'addClient',
         {
-          showLoading: true,
           showSuccess: true,
           successMessage: 'Client saved successfully!',
-          retries: 3
+          retries: 1
         }
       );
 
