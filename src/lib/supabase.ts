@@ -7,36 +7,61 @@ console.log('🔧 Supabase Config Check:');
 console.log('📍 URL:', supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'MISSING');
 console.log('🔑 Key:', supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'MISSING');
 
-// Create Supabase client with better configuration
+// Create Supabase client with optimized configuration for stability
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
-    debug: false
+    flowType: 'implicit', // Changed from pkce for better compatibility
+    debug: false,
+    storageKey: 'invoicce-auth'
   },
   global: {
     headers: {
       'X-Client-Info': 'invoicce-app',
-      'apikey': supabaseAnonKey
+      'apikey': supabaseAnonKey,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
     },
-    fetch: (url, options = {}) => {
+    fetch: async (url, options = {}) => {
       console.log('🌐 Supabase Request:', url);
+      
+      // Create abort controller for manual timeout
+      const controller = new AbortController();
       const timeoutId = setTimeout(() => {
         console.error('⏰ Supabase request timeout for:', url);
-      }, 5000);
+        controller.abort();
+      }, 8000); // Increased to 8 seconds
       
-      return fetch(url, {
-        ...options,
-        signal: AbortSignal.timeout(6000) // 6 second timeout for individual requests
-      }).finally(() => {
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal,
+          headers: {
+            ...options.headers,
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+          }
+        });
+        
         clearTimeout(timeoutId);
-      });
+        console.log('✅ Supabase response:', response.status, response.statusText);
+        return response;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error('❌ Supabase fetch error:', error);
+        throw error;
+      }
     }
   },
   db: {
     schema: 'public'
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 2
+    }
   }
 });
 

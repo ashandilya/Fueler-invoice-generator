@@ -19,6 +19,7 @@ import { SaveConfirmationModal } from "./components/common/SaveConfirmationModal
 import { InvoiceActions } from "./components/invoice/InvoiceActions";
 import { useInvoice } from "./hooks/useInvoice";
 import { useSupabaseClients } from "./hooks/useSupabaseClients";
+import { useIndexedDBClients } from "./hooks/useIndexedDBClients";
 import { useClientInvoices } from "./hooks/useClientInvoices";
 import { useCompanyProfile } from "./hooks/useCompanyProfile";
 import { useLocalStorage } from "./hooks/useLocalStorage";
@@ -27,6 +28,8 @@ import { generateInvoiceNumber } from "./utils/invoiceUtils";
 import { Client } from "./types/client";
 import { Invoice } from "./types/invoice";
 
+// Toggle between Supabase and IndexedDB
+const USE_INDEXEDDB = true; // Set to true to use IndexedDB instead of Supabase
 function App() {
   return (
     <ErrorBoundary>
@@ -68,6 +71,10 @@ function AppContent() {
   } | null>(null);
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
 
+  // Use either Supabase or IndexedDB based on the toggle
+  const supabaseClients = useSupabaseClients();
+  const indexedDBClients = useIndexedDBClients();
+  
   const {
     clients,
     loading: clientsLoading,
@@ -75,7 +82,8 @@ function AppContent() {
     addClient,
     updateClient,
     deleteClient,
-  } = useSupabaseClients();
+  } = USE_INDEXEDDB ? indexedDBClients : supabaseClients;
+  
   const { addClientInvoice } = useClientInvoices();
 
   // Get active tab from URL path

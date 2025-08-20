@@ -8,7 +8,7 @@ import { Client } from "../types/client";
 // Add timeout wrapper for operations
 const withTimeout = async <T>(
   operation: () => Promise<T>,
-  timeoutMs: number = 7000,
+  timeoutMs: number = 10000, // Increased to 10 seconds
   operationName: string = 'Operation'
 ): Promise<T> => {
   console.log(`🚀 Starting ${operationName} with ${timeoutMs}ms timeout`);
@@ -16,7 +16,7 @@ const withTimeout = async <T>(
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       console.error(`⏰ ${operationName} timed out after ${timeoutMs}ms`);
-      reject(new Error(`${operationName} timed out after ${timeoutMs / 1000} seconds. Please check your internet connection and try again.`));
+      reject(new Error(`Database connection timeout. This might be due to:\n• Slow internet connection\n• Supabase server issues\n• Network firewall blocking requests\n\nPlease try again or contact support.`));
     }, timeoutMs);
 
     operation()
@@ -183,20 +183,36 @@ export const useSupabaseClients = () => {
       // Test basic connectivity
       try {
         console.log('🔍 Testing Supabase connectivity...');
-        const { data: testData, error: testError } = await supabase
-          .from('vendors')
-          .select('count')
-          .eq('user_id', user.id)
-          .limit(1);
+        
+        // Simple connectivity test with minimal data
+        const { data: testData, error: testError } = await withTimeout(
+          () => supabase
+            .from('vendors')
+            .select('vendor_id')
+            .eq('user_id', user.id)
+            .limit(1),
+          5000,
+          'Connectivity Test'
+        );
         
         if (testError) {
           console.error('❌ Connectivity test failed:', testError);
-          throw new Error(`Database connectivity test failed: ${testError.message}`);
+          
+          // Provide specific error messages based on error type
+          if (testError.message.includes('timeout')) {
+            throw new Error("Database connection timeout. Please check your internet connection and try again.");
+          } else if (testError.message.includes('network')) {
+            throw new Error("Network error. Please check your internet connection.");
+          } else if (testError.code === 'PGRST301') {
+            throw new Error("Database table not found. Please contact support.");
+          } else {
+            throw new Error(`Database error: ${testError.message}`);
+          }
         }
         console.log('✅ Connectivity test passed');
       } catch (connectError) {
         console.error('💥 Connectivity test exception:', connectError);
-        throw new Error("Cannot connect to database. Please check your internet connection.");
+        throw connectError;
       }
 
       // Validate form data
