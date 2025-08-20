@@ -1,5 +1,6 @@
 import React from "react";
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { InlineLoginOverlay } from "./components/auth/InlineLoginOverlay";
 import ToastContainer from "./components/common/ToastContainer";
 import OfflineIndicator from "./components/common/OfflineIndicator";
@@ -40,6 +41,8 @@ function AppContent() {
   const { user, loading, needsOnboarding, completeOnboarding } = useAuth();
   const { isOnline, isSlowConnection } = useNetworkStatus();
   const { profile } = useCompanyProfile();
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     invoice,
     updateCompanyInfo,
@@ -57,9 +60,6 @@ function AppContent() {
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "form" | "preview" | "clients" | "invoices" | "profile"
-  >("form");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState<{
@@ -78,6 +78,28 @@ function AppContent() {
   } = useSupabaseClients();
   const { addClientInvoice } = useClientInvoices();
 
+  // Get active tab from URL path
+  const getActiveTabFromPath = () => {
+    const path = location.pathname;
+    if (path === '/clients') return 'clients';
+    if (path === '/invoices') return 'invoices';
+    if (path === '/profile') return 'profile';
+    if (path === '/preview') return 'preview';
+    return 'form';
+  };
+
+  const activeTab = getActiveTabFromPath();
+
+  const setActiveTab = (tab: "form" | "preview" | "clients" | "invoices" | "profile") => {
+    const paths = {
+      form: '/',
+      preview: '/preview',
+      clients: '/clients',
+      invoices: '/invoices',
+      profile: '/profile'
+    };
+    navigate(paths[tab]);
+  };
   // Show slow connection warning
   React.useEffect(() => {
     if (isSlowConnection) {
@@ -198,7 +220,7 @@ function AppContent() {
         resetInvoice();
         setSelectedClient(null);
         setShowInvoiceActions(false);
-        setActiveTab("form"); // Ensure we're on the form tab
+        navigate('/'); // Navigate to form tab
       }, 3000);
     } catch (error) {
       console.error("Error saving invoice:", error);

@@ -28,7 +28,7 @@ export const ClientList: React.FC<ClientListProps> = ({
   const handleAddClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
     setIsSubmitting(true);
     try {
-      const newClient = await addClient(clientData);
+      const newClient = await onAddClient(clientData);
       if (newClient) {
         // Show success message is handled by the error handler
       }
