@@ -172,7 +172,7 @@ function AppContent() {
     const validation = validateInvoiceForSave();
     if (!validation.isValid) {
       alert(validation.error);
-      setActiveTab("form");
+      navigate('/');
       return;
     }
 
@@ -235,7 +235,7 @@ function AppContent() {
     const validation = validateInvoiceForSave();
     if (!validation.isValid) {
       alert(validation.error);
-      setActiveTab("form");
+      navigate('/');
       return;
     }
 
@@ -285,7 +285,7 @@ function AppContent() {
     const validation = validateInvoiceForSave();
     if (!validation.isValid) {
       alert(validation.error);
-      setActiveTab("form");
+      navigate('/');
       return;
     }
 
