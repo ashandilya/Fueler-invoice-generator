@@ -172,7 +172,7 @@ function AppContent() {
     const validation = validateInvoiceForSave();
     if (!validation.isValid) {
       alert(validation.error);
-      navigate('/');
+      setActiveTab("form");
       return;
     }
 
@@ -235,7 +235,7 @@ function AppContent() {
     const validation = validateInvoiceForSave();
     if (!validation.isValid) {
       alert(validation.error);
-      navigate('/');
+      setActiveTab("form");
       return;
     }
 
@@ -285,7 +285,7 @@ function AppContent() {
     const validation = validateInvoiceForSave();
     if (!validation.isValid) {
       alert(validation.error);
-      navigate('/');
+      setActiveTab("form");
       return;
     }
 
@@ -373,7 +373,7 @@ function AppContent() {
       updateCompanyInfo(invoiceToEdit.company);
       updateClientInfo(invoiceToEdit.client);
     }, 0);
-    setActiveTab("form");
+    navigate('/');
     setShowInvoiceActions(false);
   };
 

@@ -30,6 +30,10 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
+        <Route path="/preview" element={<App />} />
+        <Route path="/clients" element={<App />} />
+        <Route path="/invoices" element={<App />} />
+        <Route path="/profile" element={<App />} />
         <Route path="/invoice/:invoiceId" element={<PublicInvoiceView />} />
       </Routes>
     </BrowserRouter>
