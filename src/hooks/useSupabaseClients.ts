@@ -173,6 +173,32 @@ export const useSupabaseClients = () => {
 
       console.log('👤 User authenticated:', user.id);
 
+      // Check Supabase configuration first
+      if (!isSupabaseConfigured()) {
+        console.error('❌ Supabase not configured properly');
+        throw new Error("Database connection not configured. Please check your environment variables.");
+      }
+      console.log('✅ Supabase configuration verified');
+
+      // Test basic connectivity
+      try {
+        console.log('🔍 Testing Supabase connectivity...');
+        const { data: testData, error: testError } = await supabase
+          .from('vendors')
+          .select('count')
+          .eq('user_id', user.id)
+          .limit(1);
+        
+        if (testError) {
+          console.error('❌ Connectivity test failed:', testError);
+          throw new Error(`Database connectivity test failed: ${testError.message}`);
+        }
+        console.log('✅ Connectivity test passed');
+      } catch (connectError) {
+        console.error('💥 Connectivity test exception:', connectError);
+        throw new Error("Cannot connect to database. Please check your internet connection.");
+      }
+
       // Validate form data
       const validationErrors = validateForm(clientData, clientValidationRules);
       if (Object.keys(validationErrors).length > 0) {
@@ -218,6 +244,10 @@ export const useSupabaseClients = () => {
               
               console.log('📝 Prepared database client data:', dbClient);
               console.log('🌐 Making Supabase request...');
+            // Add request timestamp for debugging
+            const requestStart = Date.now();
+            console.log('⏱️ Request started at:', new Date(requestStart).toISOString());
+            
               
               const { data, error } = await supabase
                 .from("vendors")
@@ -240,16 +270,26 @@ export const useSupabaseClients = () => {
               }
               
               console.log('✅ Database operation successful');
+            const requestEnd = Date.now();
+            console.log('⏱️ Request completed in:', requestEnd - requestStart, 'ms');
               return convertToAppClient(data);
             },
             'addClient',
             {
               showSuccess: true,
               successMessage: 'Client saved successfully!',
+              // Provide more specific error messages
+              if (error.code === 'PGRST301') {
+                throw new Error("Database table not found. Please contact support.");
+              } else if (error.code === '23505') {
+                throw new Error("A client with this email already exists.");
+              } else if (error.message.includes('JWT')) {
+                throw new Error("Authentication expired. Please refresh the page and try again.");
+              }
               retries: 1
             }
           ),
-          7000, // 7 second timeout
+          6000, // 6 second timeout (slightly less than UI timeout)
           'Add Client Operation'
         );
 
@@ -261,6 +301,16 @@ export const useSupabaseClients = () => {
           console.log('🔄 Updating local state...');
           setClients((prev) => [result, ...prev]);
           console.log('✅ Local state updated');
+          
+          // Show success message
+          const event = new CustomEvent('showToast', {
+            detail: {
+              message: 'Client saved successfully!',
+              type: 'success'
+            }
+          });
+          window.dispatchEvent(event);
+          
           return result;
         }
 
@@ -272,7 +322,15 @@ export const useSupabaseClients = () => {
         
         // Show timeout-specific error message
         if (error instanceof Error && error.message.includes('timed out')) {
-          alert(`⏰ Operation Timeout\n\n${error.message}\n\nPossible causes:\n• Slow internet connection\n• Database server issues\n• Network firewall blocking requests`);
+          // Show a more user-friendly timeout message
+          const event = new CustomEvent('showToast', {
+            detail: {
+              message: 'Save operation timed out. Please check your internet connection and try again.',
+              type: 'error',
+              duration: 8000
+            }
+          });
+          window.dispatchEvent(event);
         }
         
         throw error;

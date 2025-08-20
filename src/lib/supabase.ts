@@ -3,17 +3,36 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+console.log('🔧 Supabase Config Check:');
+console.log('📍 URL:', supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'MISSING');
+console.log('🔑 Key:', supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'MISSING');
+
 // Create Supabase client with better configuration
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    debug: false
   },
   global: {
     headers: {
-      'X-Client-Info': 'invoicce-app'
+      'X-Client-Info': 'invoicce-app',
+      'apikey': supabaseAnonKey
+    },
+    fetch: (url, options = {}) => {
+      console.log('🌐 Supabase Request:', url);
+      const timeoutId = setTimeout(() => {
+        console.error('⏰ Supabase request timeout for:', url);
+      }, 5000);
+      
+      return fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(6000) // 6 second timeout for individual requests
+      }).finally(() => {
+        clearTimeout(timeoutId);
+      });
     }
   },
   db: {
@@ -29,7 +48,7 @@ export const isSupabaseConfigured = (): boolean => {
 };
 
 // Utility function to get current session with retry
-export const getCurrentSession = async (retries = 2): Promise<any> => {
+export const getCurrentSession = async (retries = 1): Promise<any> => {
   console.log(`🔍 Getting current session (${retries} retries remaining)`);
   
   for (let i = 0; i < retries; i++) {
@@ -40,7 +59,7 @@ export const getCurrentSession = async (retries = 2): Promise<any> => {
       if (error) {
         console.error(`❌ Session error on attempt ${i + 1}:`, error);
         if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, 500)); // Shorter delay
+        await new Promise(resolve => setTimeout(resolve, 300)); // Even shorter delay
         continue;
       }
       
@@ -49,7 +68,7 @@ export const getCurrentSession = async (retries = 2): Promise<any> => {
     } catch (error) {
       console.error(`💥 Session exception on attempt ${i + 1}:`, error);
       if (i === retries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, 500)); // Shorter delay
+      await new Promise(resolve => setTimeout(resolve, 300)); // Even shorter delay
     }
   }
 };

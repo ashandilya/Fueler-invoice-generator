@@ -26,7 +26,8 @@ export const useAuth = () => {
         }
         
         console.log('📡 Fetching session...');
-        const { session } = await getCurrentSession();
+        const sessionData = await getCurrentSession();
+        const session = sessionData?.session;
         console.log('👤 Session user:', session?.user?.email || 'No user');
         setUser(session?.user ?? null);
       } catch (error) {
@@ -43,11 +44,13 @@ export const useAuth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state changed:', event, session?.user?.email || 'No user');
         setUser(session?.user ?? null);
         setLoading(false);
 
         // Handle user authentication
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log('✅ User signed in, creating user record...');
           const isNewUser = await createUserRecord(session.user);
           setNeedsOnboarding(isNewUser);
         }
