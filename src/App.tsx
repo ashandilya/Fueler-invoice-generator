@@ -119,23 +119,21 @@ function AppContent() {
   }, [isSlowConnection]);
 
   // Show loading state
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        {loading ? (
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        ) : (
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
-            <p className="text-gray-600">Please sign in to access the application.</p>
-          </div>
-        )}
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
   if (needsOnboarding) {
     return <OnboardingForm onComplete={completeOnboarding} />;
+  }
+
+  // If not authenticated, show the inline login overlay
+  if (!user) {
+    return <InlineLoginOverlay />;
   }
 
   // STRICT VALIDATION: Prevent saving blank invoices
@@ -428,17 +426,8 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
-      {/* Show login overlay if not authenticated */}
-      {!user && <InlineLoginOverlay />}
-
-      {/* Main app content - always rendered but blurred when not authenticated */}
-      <div
-        className={`transition-all duration-300 ${
-          !user ? "blur-sm pointer-events-none" : ""
-        }`}
-      >
-        {/* Show connection status */}
-        {/* Remove the always-showing connection status */}
+      {/* Main app content */}
+      <div>
 
         <Header
           onSave={handleSave}
