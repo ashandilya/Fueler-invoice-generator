@@ -8,7 +8,7 @@ import { Client } from "../types/client";
 // Add timeout wrapper for operations
 const withTimeout = async <T>(
   operation: () => Promise<T>,
-  timeoutMs: number = 10000, // Increased to 10 seconds
+  timeoutMs: number = 20000, // Increased to 20 seconds
   operationName: string = 'Operation'
 ): Promise<T> => {
   console.log(`🚀 Starting ${operationName} with ${timeoutMs}ms timeout`);
@@ -16,7 +16,7 @@ const withTimeout = async <T>(
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       console.error(`⏰ ${operationName} timed out after ${timeoutMs}ms`);
-      reject(new Error(`Database connection timeout. This might be due to:\n• Slow internet connection\n• Supabase server issues\n• Network firewall blocking requests\n\nPlease try again or contact support.`));
+      reject(new Error(`Connection timeout. Please check your internet connection and try again. If the problem persists, the app will work offline with local storage.`));
     }, timeoutMs);
 
     operation()
@@ -212,6 +212,13 @@ export const useSupabaseClients = () => {
         console.log('✅ Connectivity test passed');
       } catch (connectError) {
         console.error('💥 Connectivity test exception:', connectError);
+        
+        // Emit event for adaptive storage to handle
+        const event = new CustomEvent('supabaseConnectionError', {
+          detail: { error: connectError, context: 'addClient' }
+        });
+        window.dispatchEvent(event);
+        
         throw connectError;
       }
 
@@ -326,6 +333,13 @@ export const useSupabaseClients = () => {
         
       } catch (error) {
         console.error('💥 Final error in addClient:', error);
+        
+        // Emit event for adaptive storage to handle
+        const event = new CustomEvent('supabaseConnectionError', {
+          detail: { error, context: 'addClient' }
+        });
+        window.dispatchEvent(event);
+        
         setSaving(false);
         
         // Show timeout-specific error message

@@ -13,7 +13,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'implicit', // Changed from pkce for better compatibility
+    flowType: 'pkce', // Better security
     debug: false,
     storageKey: 'invoicce-auth'
   },
@@ -32,7 +32,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       const timeoutId = setTimeout(() => {
         console.error('⏰ Supabase request timeout for:', url);
         controller.abort();
-      }, 8000); // Increased to 8 seconds
+      }, 15000); // Increased to 15 seconds for better stability
       
       try {
         const response = await fetch(url, {
@@ -40,8 +40,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
           signal: controller.signal,
           headers: {
             ...options.headers,
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Connection': 'keep-alive',
+            'Keep-Alive': 'timeout=30, max=100'
           }
         });
         
@@ -51,6 +53,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       } catch (error) {
         clearTimeout(timeoutId);
         console.error('❌ Supabase fetch error:', error);
+        // Convert AbortError to a more user-friendly error
+        if (error.name === 'AbortError') {
+          throw new Error('Database connection timeout. Please check your internet connection and try again.');
+        }
         throw error;
       }
     }

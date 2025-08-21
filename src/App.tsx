@@ -20,17 +20,17 @@ import { InvoiceActions } from "./components/invoice/InvoiceActions";
 import { useInvoice } from "./hooks/useInvoice";
 import { useSupabaseClients } from "./hooks/useSupabaseClients";
 import { useIndexedDBClients } from "./hooks/useIndexedDBClients";
+import { useAdaptiveStorage } from './hooks/useAdaptiveStorage';
 import { useClientInvoices } from "./hooks/useClientInvoices";
 import { useCompanyProfile } from "./hooks/useCompanyProfile";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useCloudInvoices } from "./hooks/useCloudInvoices";
+import { DatabaseFallback } from './components/common/DatabaseFallback';
 import { generateInvoicePDF } from "./utils/pdfGenerator";
 import { generateInvoiceNumber } from "./utils/invoiceUtils";
 import { Client } from "./types/client";
 import { Invoice } from "./types/invoice";
 
-// Toggle between Supabase and IndexedDB
-const USE_INDEXEDDB = false; // Set to false to use Supabase for cross-device sync
 function App() {
   return (
     <ErrorBoundary>
@@ -103,10 +103,7 @@ function AppContent() {
   } | null>(null);
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
 
-  // Use either Supabase or IndexedDB based on the toggle
-  const supabaseClients = useSupabaseClients();
-  const indexedDBClients = useIndexedDBClients();
-  
+  // Use adaptive storage that can switch between Supabase and IndexedDB
   const {
     clients,
     loading: clientsLoading,
@@ -114,7 +111,12 @@ function AppContent() {
     addClient,
     updateClient,
     deleteClient,
-  } = USE_INDEXEDDB ? indexedDBClients : supabaseClients;
+    useLocal,
+    showFallback,
+    isRetrying,
+    retrySupabase,
+    switchToLocal,
+  } = useAdaptiveStorage();
   
   const { addClientInvoice } = useClientInvoices();
 
@@ -674,6 +676,15 @@ function AppContent() {
           />
         </main>
       </div>
+      
+      {/* Database Fallback UI */}
+      {showFallback && (
+        <DatabaseFallback
+          onRetrySupabase={retrySupabase}
+          onSwitchToLocal={switchToLocal}
+          isRetrying={isRetrying}
+        />
+      )}
     </div>
   );
 }
