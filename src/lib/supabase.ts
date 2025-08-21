@@ -32,7 +32,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       const timeoutId = setTimeout(() => {
         console.error('⏰ Supabase request timeout for:', url);
         controller.abort();
-      }, 15000); // Increased to 15 seconds for better stability
+      }, 30000); // Increased to 30 seconds to prevent artificial timeouts
       
       try {
         const response = await fetch(url, {

@@ -6,34 +6,6 @@ import { useErrorHandler } from "./useErrorHandler";
 import { Client } from "../types/client";
 import { connectionManager } from "../utils/connectionManager";
 
-// Add timeout wrapper for operations
-const withTimeout = async <T>(
-  operation: () => Promise<T>,
-  timeoutMs: number = 20000, // Increased to 20 seconds
-  operationName: string = 'Operation'
-): Promise<T> => {
-  console.log(`🚀 Starting ${operationName} with ${timeoutMs}ms timeout`);
-  
-  return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      console.error(`⏰ ${operationName} timed out after ${timeoutMs}ms`);
-      reject(new Error(`Connection timeout. Please check your internet connection and try again. If the problem persists, the app will work offline with local storage.`));
-    }, timeoutMs);
-
-    operation()
-      .then((result) => {
-        console.log(`✅ ${operationName} completed successfully`);
-        clearTimeout(timeoutId);
-        resolve(result);
-      })
-      .catch((error) => {
-        console.error(`❌ ${operationName} failed:`, error);
-        clearTimeout(timeoutId);
-        reject(error);
-      });
-  });
-};
-
 // Retry utility with exponential backoff
 const retryWithBackoff = async <T>(
   operation: () => Promise<T>,
@@ -196,59 +168,54 @@ export const useSupabaseClients = () => {
       try {
         console.log('🚀 Starting database operation...');
         
-        const result = await withTimeout(
-          () => handleAsyncOperation(
-            async () => {
+        const result = await handleAsyncOperation(
+          async () => {
+            // Prepare client data
+            const dbClient = {
+              user_id: user.id,
+              vendor_name: clientData.name.trim(),
+              business_name: (clientData.businessName || clientData.name).trim(),
+              email: clientData.email.toLowerCase().trim(),
+              phone: clientData.phone?.trim() || null,
+              gstin: clientData.gstin?.trim() || null,
+              billing_address: clientData.billingAddress.trim(),
+              city: clientData.city?.trim() || null,
+              state: clientData.state?.trim() || null,
+              country: clientData.country?.trim() || "India",
+            };
+            
+            console.log('📝 Prepared database client data:', dbClient);
+            console.log('🌐 Making Supabase request...');
+            
+            const { data, error } = await supabase
+              .from("vendors")
+              .insert(dbClient)
+              .select()
+              .single();
 
-              // Prepare client data
-              const dbClient = {
-                user_id: user.id,
-                vendor_name: clientData.name.trim(),
-                business_name: (clientData.businessName || clientData.name).trim(),
-                email: clientData.email.toLowerCase().trim(),
-                phone: clientData.phone?.trim() || null,
-                gstin: clientData.gstin?.trim() || null,
-                billing_address: clientData.billingAddress.trim(),
-                city: clientData.city?.trim() || null,
-                state: clientData.state?.trim() || null,
-                country: clientData.country?.trim() || "India",
-              };
-              
-              console.log('📝 Prepared database client data:', dbClient);
-              console.log('🌐 Making Supabase request...');
-              
-              const { data, error } = await supabase
-                .from("vendors")
-                .insert(dbClient)
-                .select()
-                .single();
+            console.log('📡 Supabase response received');
+            console.log('📊 Data:', data);
+            console.log('⚠️ Error:', error);
 
-              console.log('📡 Supabase response received');
-              console.log('📊 Data:', data);
-              console.log('⚠️ Error:', error);
-
-              if (error) {
-                console.error('❌ Supabase error:', error);
-                throw error;
-              }
-
-              if (!data) {
-                console.error('❌ No data returned from insert operation');
-                throw new Error("No data returned from insert operation");
-              }
-              
-              console.log('✅ Database operation successful');
-              return convertToAppClient(data);
-            },
-            'addClient',
-            {
-              showSuccess: true,
-              successMessage: 'Client saved successfully!',
-              retries: 1
+            if (error) {
+              console.error('❌ Supabase error:', error);
+              throw error;
             }
-          ),
-          15000, // 15 second timeout - more reasonable
-          'Add Client Operation'
+
+            if (!data) {
+              console.error('❌ No data returned from insert operation');
+              throw new Error("No data returned from insert operation");
+            }
+            
+            console.log('✅ Database operation successful');
+            return convertToAppClient(data);
+          },
+          'addClient',
+          {
+            showSuccess: true,
+            successMessage: 'Client saved successfully!',
+            retries: 1
+          }
         );
 
         console.log('🎉 Operation completed, result:', result);
@@ -278,19 +245,6 @@ export const useSupabaseClients = () => {
         console.error('💥 Final error in addClient:', error);
         
         setSaving(false);
-        
-        // Show timeout-specific error message
-        if (error instanceof Error && error.message.includes('timed out')) {
-          // Show a more user-friendly timeout message
-          const event = new CustomEvent('showToast', {
-            detail: {
-              message: 'Save operation timed out. Please check your internet connection and try again.',
-              type: 'error',
-              duration: 8000
-            }
-          });
-          window.dispatchEvent(event);
-        }
         
         throw error;
       }
