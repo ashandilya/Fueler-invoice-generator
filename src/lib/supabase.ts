@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Production Supabase configuration
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
 
 console.log('🔧 Supabase Config Check:');
 console.log('📍 URL:', supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'MISSING');
@@ -26,6 +27,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     },
     fetch: async (url, options = {}) => {
       console.log('🌐 Supabase Request:', url);
+      
+      // Ensure we're not connecting to localhost in production
+      if (url.includes('localhost') && window.location.hostname !== 'localhost') {
+        console.error('❌ Attempted localhost connection in production:', url);
+        throw new Error('Invalid localhost connection in production environment');
+      }
       
       // Create abort controller for manual timeout
       const controller = new AbortController();
@@ -64,10 +71,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   db: {
     schema: 'public'
   },
+  // Disable realtime to prevent localhost WebSocket connections
   realtime: {
-    params: {
-      eventsPerSecond: 2
-    }
+    disabled: true
   }
 });
 
