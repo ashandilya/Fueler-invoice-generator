@@ -185,32 +185,16 @@ export const useSupabaseClients = () => {
       try {
         console.log('🔍 Testing Supabase connectivity...');
         
-        // Use connection manager for smart connectivity testing
-        const isConnected = await connectionManager.testConnection(supabase, user.id);
-        
-        if (!isConnected) {
-          const connectionState = connectionManager.getConnectionState();
-          
-          if (connectionState.consecutiveFailures >= 3) {
-            throw new Error("Unable to connect to database after multiple attempts. Please check your internet connection and try again later.");
-          } else {
-            throw new Error("Database connection failed. Please try again.");
-          }
-        }
+        // Simple connectivity test - just try the actual operation
+        // Don't pre-test connection, let the actual operation handle errors
         console.log('✅ Connectivity test passed');
       } catch (connectError) {
         console.error('💥 Connectivity test exception:', connectError);
-        
-        // Emit event for adaptive storage to handle
-        throw connectError;
+        // Don't throw here, let the actual operation handle the error
       }
 
       // Check if we should attempt the operation
-      if (!connectionManager.shouldAttemptConnection()) {
-        const nextRetry = connectionManager.getNextRetryTime();
-        const waitTime = nextRetry ? Math.ceil((nextRetry.getTime() - Date.now()) / 1000) : 0;
-        throw new Error(`Too many connection attempts. Please wait ${waitTime} seconds before trying again.`);
-      }
+      // Remove connection attempt blocking - let users try when they want
 
       // Validate form data
       const validationErrors = validateForm(clientData, clientValidationRules);
@@ -231,7 +215,6 @@ export const useSupabaseClients = () => {
         const result = await withTimeout(
           () => handleAsyncOperation(
             async () => {
-              debouncer.markSaved();
               console.log('✅ Debounce check passed');
 
               // Prepare client data
@@ -250,10 +233,6 @@ export const useSupabaseClients = () => {
               
               console.log('📝 Prepared database client data:', dbClient);
               console.log('🌐 Making Supabase request...');
-            // Add request timestamp for debugging
-            const requestStart = Date.now();
-            console.log('⏱️ Request started at:', new Date(requestStart).toISOString());
-            
               
               const { data, error } = await supabase
                 .from("vendors")
@@ -276,8 +255,6 @@ export const useSupabaseClients = () => {
               }
               
               console.log('✅ Database operation successful');
-            const requestEnd = Date.now();
-            console.log('⏱️ Request completed in:', requestEnd - requestStart, 'ms');
               return convertToAppClient(data);
             },
             'addClient',
@@ -287,7 +264,7 @@ export const useSupabaseClients = () => {
               retries: 1
             }
           ),
-          6000, // 6 second timeout (slightly less than UI timeout)
+          15000, // 15 second timeout - more reasonable
           'Add Client Operation'
         );
 

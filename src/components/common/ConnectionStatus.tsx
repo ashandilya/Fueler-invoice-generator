@@ -48,7 +48,7 @@ export const ConnectionStatus: React.FC = () => {
   };
 
   // Don't show anything if connection is healthy
-  if (connectionState.isHealthy) {
+  if (connectionState.isHealthy || connectionState.consecutiveFailures < 5) {
     return null;
   }
 

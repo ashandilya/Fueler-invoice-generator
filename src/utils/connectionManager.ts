@@ -44,36 +44,34 @@ export class ConnectionManager {
 
   // Test connection with smart retry logic
   async testConnection(supabase: any, userId: string): Promise<boolean> {
-    // If already connecting, return the existing promise
-    if (this.connectionPromise) {
-      return this.connectionPromise;
-    }
+    try {
+      // Simple connection test without aggressive retry logic
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('vendor_id')
+        .eq('user_id', userId)
+        .limit(1);
 
-    // If too many consecutive failures, implement exponential backoff
-    if (this.consecutiveFailures >= this.maxRetries) {
-      const timeSinceLastAttempt = this.lastSuccessfulConnection 
-        ? Date.now() - this.lastSuccessfulConnection.getTime()
-        : Date.now();
-      
-      const backoffTime = Math.min(
-        this.backoffDelay * Math.pow(2, this.consecutiveFailures - this.maxRetries),
-        this.maxBackoffDelay
-      );
-
-      if (timeSinceLastAttempt < backoffTime) {
-        console.log(`🔄 Connection backoff: waiting ${Math.round((backoffTime - timeSinceLastAttempt) / 1000)}s`);
-        return false;
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned (which is fine)
+        throw error;
       }
+
+      // Connection successful
+      this.connectionState = 'connected';
+      this.consecutiveFailures = 0;
+      this.lastSuccessfulConnection = new Date();
+      this.notifyListeners();
+      
+      return true;
+    } catch (error) {
+      this.consecutiveFailures++;
+      this.connectionState = 'error';
+      this.notifyListeners();
+      
+      // Only log errors, don't show aggressive popups
+      console.warn(`Connection test failed (attempt ${this.consecutiveFailures}):`, error);
+      return false;
     }
-
-    this.connectionState = 'connecting';
-    this.notifyListeners();
-
-    this.connectionPromise = this.performConnectionTest(supabase, userId);
-    const result = await this.connectionPromise;
-    this.connectionPromise = null;
-
-    return result;
   }
 
   private async performConnectionTest(supabase: any, userId: string): Promise<boolean> {

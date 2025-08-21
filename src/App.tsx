@@ -440,11 +440,7 @@ function AppContent() {
         }`}
       >
         {/* Show connection status */}
-        {user && (clientsLoading || cloudInvoices.loading) && (
-          <div className="fixed top-4 left-4 bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm">
-            Connecting to cloud database...
-          </div>
-        )}
+        {/* Remove the always-showing connection status */}
 
         <Header
           onSave={handleSave}
