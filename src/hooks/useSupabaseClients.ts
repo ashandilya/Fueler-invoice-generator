@@ -4,7 +4,6 @@ import { supabase, DatabaseVendor, isSupabaseConfigured, getCurrentSession } fro
 import { useAuth } from "./useAuth";
 import { useErrorHandler } from "./useErrorHandler";
 import { Client } from "../types/client";
-import { connectionManager } from "../utils/connectionManager";
 
 // Simple timeout wrapper for Supabase operations
 const withTimeout = async <T>(
@@ -42,7 +41,6 @@ export const useSupabaseClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  
 
   const fetchClients = useCallback(async () => {
     if (!user) {
@@ -368,7 +366,6 @@ export const useSupabaseClients = () => {
   useEffect(() => {
     fetchClients();
   }, [fetchClients]);
-
 
   return {
     clients,
