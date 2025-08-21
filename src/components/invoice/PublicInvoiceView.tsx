@@ -20,65 +20,13 @@ export const PublicInvoiceView: React.FC = () => {
         
         console.log('Looking for invoice ID:', invoiceId);
         
-        // CRITICAL: Search all possible storage locations
-        const storageKeys = [
-          'shared_invoices',  // Primary shared storage
-          'invoices',         // Main storage
-        ];
+        // CLOUD-ONLY: Load from Supabase via API call
+        // For now, show error message directing users to create account
+        setError('This invoice link requires the owner to be signed in. Public invoice viewing will be available in a future update.');
         
-        // Add user-specific keys
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.startsWith('invoices_') || key.includes('invoice'))) {
-            storageKeys.push(key);
-          }
-        }
-        
-        console.log('Searching storage keys:', storageKeys);
-        
-        for (const key of storageKeys) {
-          try {
-            const data = localStorage.getItem(key);
-            if (data) {
-              console.log(`Checking key: ${key}`);
-              const invoices = JSON.parse(data, (key, value) => {
-                // Date reviver function
-                if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
-                  return new Date(value);
-                }
-                return value;
-              });
-              
-              if (Array.isArray(invoices)) {
-                console.log(`Found ${invoices.length} invoices in ${key}`);
-                foundInvoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
-                if (foundInvoice) {
-                  console.log('Invoice found in:', key);
-                  break;
-                }
-              } else if (invoices && typeof invoices === 'object' && invoices.id === invoiceId) {
-                // Handle single invoice object
-                foundInvoice = invoices;
-                console.log('Single invoice found in:', key);
-                break;
-              }
-            }
-          } catch (parseError) {
-            console.warn(`Error parsing ${key}:`, parseError);
-            continue;
-          }
-        }
-        
-        if (foundInvoice) {
-          console.log('Successfully loaded invoice:', foundInvoice.invoiceNumber);
-          setInvoice(foundInvoice);
-        } else {
-          console.error('Invoice not found in any storage location');
-          setError('Invoice not found. The invoice may have been deleted or the link is invalid.');
-        }
       } catch (err) {
         console.error('Error loading invoice:', err);
-        setError('Failed to load invoice');
+        setError('Failed to load invoice. Please contact the invoice sender.');
       } finally {
         setLoading(false);
       }
@@ -120,7 +68,7 @@ export const PublicInvoiceView: React.FC = () => {
         <div className="text-center">
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
           <h1 className="mt-4 text-xl font-semibold text-gray-900">Invoice Not Found</h1>
-          <p className="mt-2 text-gray-600">{error || 'The requested invoice could not be found.'}</p>
+          <p className="mt-2 text-gray-600 max-w-md mx-auto">{error || 'The requested invoice could not be found.'}</p>
           <div className="mt-6">
             <a
               href="/"

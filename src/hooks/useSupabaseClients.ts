@@ -214,11 +214,6 @@ export const useSupabaseClients = () => {
         console.error('💥 Connectivity test exception:', connectError);
         
         // Emit event for adaptive storage to handle
-        const event = new CustomEvent('supabaseConnectionError', {
-          detail: { error: connectError, context: 'addClient' }
-        });
-        window.dispatchEvent(event);
-        
         throw connectError;
       }
 
@@ -333,12 +328,6 @@ export const useSupabaseClients = () => {
         
       } catch (error) {
         console.error('💥 Final error in addClient:', error);
-        
-        // Emit event for adaptive storage to handle
-        const event = new CustomEvent('supabaseConnectionError', {
-          detail: { error, context: 'addClient' }
-        });
-        window.dispatchEvent(event);
         
         setSaving(false);
         

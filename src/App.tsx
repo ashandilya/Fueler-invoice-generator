@@ -19,13 +19,9 @@ import { SaveConfirmationModal } from "./components/common/SaveConfirmationModal
 import { InvoiceActions } from "./components/invoice/InvoiceActions";
 import { useInvoice } from "./hooks/useInvoice";
 import { useSupabaseClients } from "./hooks/useSupabaseClients";
-import { useIndexedDBClients } from "./hooks/useIndexedDBClients";
-import { useAdaptiveStorage } from './hooks/useAdaptiveStorage';
 import { useClientInvoices } from "./hooks/useClientInvoices";
 import { useCompanyProfile } from "./hooks/useCompanyProfile";
-import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useCloudInvoices } from "./hooks/useCloudInvoices";
-import { DatabaseFallback } from './components/common/DatabaseFallback';
 import { generateInvoicePDF } from "./utils/pdfGenerator";
 import { generateInvoiceNumber } from "./utils/invoiceUtils";
 import { Client } from "./types/client";
@@ -58,41 +54,19 @@ function AppContent() {
     resetInvoice,
   } = useInvoice(profile);
 
-  const [savedInvoices, setSavedInvoices] = useLocalStorage<Invoice[]>(
-    "invoices",
-    []
-  );
-  
-  // Use cloud storage for invoices when authenticated
+  // CLOUD-ONLY: Use Supabase for all data storage
   const cloudInvoices = useCloudInvoices();
-  
-  // Use cloud invoices if user is authenticated, otherwise use local storage
-  const invoicesData = user ? {
+  const supabaseClients = useSupabaseClients();
+
+  // Only use cloud storage - no local fallback
+  const invoicesData = {
     invoices: cloudInvoices.invoices,
     loading: cloudInvoices.loading,
     saving: cloudInvoices.saving,
     saveInvoice: cloudInvoices.saveInvoice,
     deleteInvoice: cloudInvoices.deleteInvoice,
-  } : {
-    invoices: savedInvoices,
-    loading: false,
-    saving: false,
-    saveInvoice: async (invoice: Invoice) => {
-      const updatedInvoices = [...savedInvoices];
-      const existingIndex = updatedInvoices.findIndex(inv => inv.id === invoice.id);
-      if (existingIndex >= 0) {
-        updatedInvoices[existingIndex] = invoice;
-      } else {
-        updatedInvoices.push(invoice);
-      }
-      setSavedInvoices(updatedInvoices);
-      return invoice;
-    },
-    deleteInvoice: async (invoiceId: string) => {
-      const updatedInvoices = savedInvoices.filter(inv => inv.id !== invoiceId);
-      setSavedInvoices(updatedInvoices);
-    },
   };
+
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -103,20 +77,8 @@ function AppContent() {
   } | null>(null);
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
 
-  // Use adaptive storage that can switch between Supabase and IndexedDB
-  const {
-    clients,
-    loading: clientsLoading,
-    saving: clientsSaving,
-    addClient,
-    updateClient,
-    deleteClient,
-    useLocal,
-    showFallback,
-    isRetrying,
-    retrySupabase,
-    switchToLocal,
-  } = useAdaptiveStorage();
+  // CLOUD-ONLY: Use only Supabase clients
+  const { clients, loading: clientsLoading, saving: clientsSaving, addClient, updateClient, deleteClient } = supabaseClients;
   
   const { addClientInvoice } = useClientInvoices();
 
@@ -157,10 +119,17 @@ function AppContent() {
   }, [isSlowConnection]);
 
   // Show loading state
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        {loading ? (
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        ) : (
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+            <p className="text-gray-600">Please sign in to access the application.</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -218,37 +187,15 @@ function AppContent() {
       return;
     }
 
+    if (!user) {
+      alert("Please sign in to save invoices.");
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Save to local storage
-      const updatedInvoices = [...savedInvoices];
-      const existingIndex = updatedInvoices.findIndex(
-        (inv) => inv.id === invoice.id
-      );
-
-      if (existingIndex >= 0) {
-        updatedInvoices[existingIndex] = invoice;
-      } else {
-        updatedInvoices.push(invoice);
-      }
-
-      setSavedInvoices(updatedInvoices);
-
-      // CRITICAL: Save to global shared storage for shareable links
-      const globalInvoices = JSON.parse(
-        localStorage.getItem("shared_invoices") || "[]"
-      );
-      const globalExistingIndex = globalInvoices.findIndex(
-        (inv: Invoice) => inv.id === invoice.id
-      );
-
-      if (globalExistingIndex >= 0) {
-        globalInvoices[globalExistingIndex] = invoice;
-      } else {
-        globalInvoices.push(invoice);
-      }
-
-      localStorage.setItem("shared_invoices", JSON.stringify(globalInvoices));
+      // CLOUD-ONLY: Save to Supabase
+      await cloudInvoices.saveInvoice(invoice);
 
       // If a client is selected, associate this invoice with the client
       if (selectedClient) {
@@ -266,7 +213,7 @@ function AppContent() {
       }, 3000);
     } catch (error) {
       console.error("Error saving invoice:", error);
-      alert("Failed to save invoice. Please try again.");
+      alert("Failed to save invoice to cloud. Please check your internet connection and try again.");
     } finally {
       setIsSaving(false);
     }
@@ -451,35 +398,11 @@ function AppContent() {
       )
     ) {
       invoicesData.deleteInvoice(invoiceId);
-
-      // Also remove from global shared storage
-      const globalInvoices = JSON.parse(
-        localStorage.getItem("shared_invoices") || "[]"
-      );
-      const filteredGlobal = globalInvoices.filter(
-        (inv: Invoice) => inv.id !== invoiceId
-      );
-      localStorage.setItem("shared_invoices", JSON.stringify(filteredGlobal));
     }
   };
 
   const handleShareFromPastInvoices = (invoiceToShare: Invoice) => {
-    // Ensure invoice is in global shared storage
-    const globalInvoices = JSON.parse(
-      localStorage.getItem("shared_invoices") || "[]"
-    );
-    const existingIndex = globalInvoices.findIndex(
-      (inv: Invoice) => inv.id === invoiceToShare.id
-    );
-
-    if (existingIndex >= 0) {
-      globalInvoices[existingIndex] = invoiceToShare;
-    } else {
-      globalInvoices.push(invoiceToShare);
-    }
-
-    localStorage.setItem("shared_invoices", JSON.stringify(globalInvoices));
-
+    // Create shareable link directly from cloud data
     const shareUrl = `${window.location.origin}/invoice/${invoiceToShare.id}`;
     navigator.clipboard
       .writeText(shareUrl)
@@ -514,6 +437,13 @@ function AppContent() {
           !user ? "blur-sm pointer-events-none" : ""
         }`}
       >
+        {/* Show connection status */}
+        {user && (clientsLoading || cloudInvoices.loading) && (
+          <div className="fixed top-4 left-4 bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm">
+            Connecting to cloud database...
+          </div>
+        )}
+
         <Header
           onSave={handleSave}
           onDownload={handleDownload}
@@ -676,15 +606,6 @@ function AppContent() {
           />
         </main>
       </div>
-      
-      {/* Database Fallback UI */}
-      {showFallback && (
-        <DatabaseFallback
-          onRetrySupabase={retrySupabase}
-          onSwitchToLocal={switchToLocal}
-          isRetrying={isRetrying}
-        />
-      )}
     </div>
   );
 }
