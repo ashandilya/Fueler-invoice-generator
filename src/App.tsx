@@ -23,13 +23,14 @@ import { useIndexedDBClients } from "./hooks/useIndexedDBClients";
 import { useClientInvoices } from "./hooks/useClientInvoices";
 import { useCompanyProfile } from "./hooks/useCompanyProfile";
 import { useLocalStorage } from "./hooks/useLocalStorage";
+import { useCloudInvoices } from "./hooks/useCloudInvoices";
 import { generateInvoicePDF } from "./utils/pdfGenerator";
 import { generateInvoiceNumber } from "./utils/invoiceUtils";
 import { Client } from "./types/client";
 import { Invoice } from "./types/invoice";
 
 // Toggle between Supabase and IndexedDB
-const USE_INDEXEDDB = true; // Set to true to use IndexedDB instead of Supabase
+const USE_INDEXEDDB = false; // Set to false to use Supabase for cross-device sync
 function App() {
   return (
     <ErrorBoundary>
@@ -61,6 +62,37 @@ function AppContent() {
     "invoices",
     []
   );
+  
+  // Use cloud storage for invoices when authenticated
+  const cloudInvoices = useCloudInvoices();
+  
+  // Use cloud invoices if user is authenticated, otherwise use local storage
+  const invoicesData = user ? {
+    invoices: cloudInvoices.invoices,
+    loading: cloudInvoices.loading,
+    saving: cloudInvoices.saving,
+    saveInvoice: cloudInvoices.saveInvoice,
+    deleteInvoice: cloudInvoices.deleteInvoice,
+  } : {
+    invoices: savedInvoices,
+    loading: false,
+    saving: false,
+    saveInvoice: async (invoice: Invoice) => {
+      const updatedInvoices = [...savedInvoices];
+      const existingIndex = updatedInvoices.findIndex(inv => inv.id === invoice.id);
+      if (existingIndex >= 0) {
+        updatedInvoices[existingIndex] = invoice;
+      } else {
+        updatedInvoices.push(invoice);
+      }
+      setSavedInvoices(updatedInvoices);
+      return invoice;
+    },
+    deleteInvoice: async (invoiceId: string) => {
+      const updatedInvoices = savedInvoices.filter(inv => inv.id !== invoiceId);
+      setSavedInvoices(updatedInvoices);
+    },
+  };
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -416,10 +448,7 @@ function AppContent() {
         "Are you sure you want to delete this invoice? This action cannot be undone."
       )
     ) {
-      const updatedInvoices = savedInvoices.filter(
-        (inv) => inv.id !== invoiceId
-      );
-      setSavedInvoices(updatedInvoices);
+      invoicesData.deleteInvoice(invoiceId);
 
       // Also remove from global shared storage
       const globalInvoices = JSON.parse(
@@ -558,7 +587,7 @@ function AppContent() {
             <CompanyProfileForm />
           ) : activeTab === "invoices" ? (
             <PastInvoicesTab
-              invoices={savedInvoices}
+              invoices={invoicesData.invoices}
               onEdit={handleEditInvoice}
               onDuplicate={handleDuplicateInvoice}
               onDelete={handleDeleteInvoice}

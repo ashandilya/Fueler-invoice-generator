@@ -3,6 +3,8 @@ import React from 'react';
 import { Invoice, LineItem, CompanyInfo, ClientInfo } from '../types/invoice';
 import { generateInvoiceNumber } from '../utils/invoiceUtils';
 import { useCompanyProfile } from './useCompanyProfile';
+import { useAuth } from './useAuth';
+import { supabase } from '../lib/supabase';
 
 const initialCompanyInfo: CompanyInfo = {
   name: 'KiwisMedia Technologies Pvt. Ltd.',
