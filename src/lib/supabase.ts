@@ -39,7 +39,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       const timeoutId = setTimeout(() => {
         console.error('⏰ Supabase request timeout for:', url);
         controller.abort();
-      }, 30000); // Increased to 30 seconds to prevent artificial timeouts
+      }, 15000); // 15 second timeout
       
       try {
         const response = await fetch(url, {
@@ -47,15 +47,19 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
           signal: controller.signal,
           headers: {
             ...options.headers,
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
-            'Pragma': 'no-cache',
-            'Connection': 'keep-alive',
-            'Keep-Alive': 'timeout=30, max=100'
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           }
         });
         
         clearTimeout(timeoutId);
         console.log('✅ Supabase response:', response.status, response.statusText);
+        
+        // Check if response is ok
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         return response;
       } catch (error) {
         clearTimeout(timeoutId);
@@ -73,7 +77,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   // Disable realtime to prevent localhost WebSocket connections
   realtime: {
-    disabled: true
+    disabled: true,
+    params: {
+      eventsPerSecond: 2
+    }
   }
 });
 

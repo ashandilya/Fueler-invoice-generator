@@ -6,53 +6,20 @@ import { useErrorHandler } from "./useErrorHandler";
 import { Client } from "../types/client";
 import { connectionManager } from "../utils/connectionManager";
 
-// Retry utility with exponential backoff
-const retryWithBackoff = async <T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 2,
-  baseDelay: number = 1000
+// Simple timeout wrapper for Supabase operations
+const withTimeout = async <T>(
+  promise: Promise<T>,
+  timeoutMs: number = 10000
 ): Promise<T> => {
-  let lastError: Error;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const result = await operation();
-      return result;
-    } catch (error) {
-      lastError = error as Error;
-      
-      if (attempt === maxRetries) {
-        throw lastError;
-      }
-      
-      // Exponential backoff: 1s, 2s, 4s
-      const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), 3000); // Cap at 3s
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-  
-  throw lastError!;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Operation timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]);
 };
 
-// Check if user is online
-const checkOnlineStatus = (): boolean => {
-  return navigator.onLine;
-};
-
-// Debounce utility for preventing rapid saves
-const createDebouncer = (delay: number = 5000) => {
-  let lastSaveTime = 0;
-  
-  return {
-    canSave: (): boolean => {
-      const now = Date.now();
-      return now - lastSaveTime > delay;
-    },
-    markSaved: (): void => {
-      lastSaveTime = Date.now();
-    }
-  };
-};
 const convertToAppClient = (dbVendor: DatabaseVendor): Client => ({
   id: dbVendor.vendor_id,
   name: dbVendor.business_name,
@@ -76,8 +43,6 @@ export const useSupabaseClients = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
-  // Create debouncer instance
-  const debouncer = createDebouncer(5000);
 
   const fetchClients = useCallback(async () => {
     if (!user) {
@@ -89,11 +54,14 @@ export const useSupabaseClients = () => {
     
     const result = await handleAsyncOperation(
       async () => {
-        const { data, error } = await supabase
-          .from("vendors")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
+        const { data, error } = await withTimeout(
+          supabase
+            .from("vendors")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false }),
+          8000 // 8 second timeout
+        );
 
         if (error) throw error;
         return data;
@@ -170,6 +138,8 @@ export const useSupabaseClients = () => {
         
         const result = await handleAsyncOperation(
           async () => {
+            console.log('🚀 Starting Supabase insert operation...');
+            
             // Prepare client data
             const dbClient = {
               user_id: user.id,
@@ -187,11 +157,14 @@ export const useSupabaseClients = () => {
             console.log('📝 Prepared database client data:', dbClient);
             console.log('🌐 Making Supabase request...');
             
-            const { data, error } = await supabase
-              .from("vendors")
-              .insert(dbClient)
-              .select()
-              .single();
+            const { data, error } = await withTimeout(
+              supabase
+                .from("vendors")
+                .insert(dbClient)
+                .select()
+                .single(),
+              10000 // 10 second timeout for insert
+            );
 
             console.log('📡 Supabase response received');
             console.log('📊 Data:', data);
@@ -214,7 +187,7 @@ export const useSupabaseClients = () => {
           {
             showSuccess: true,
             successMessage: 'Client saved successfully!',
-            retries: 1
+            retries: 2
           }
         );
 
@@ -308,12 +281,15 @@ export const useSupabaseClients = () => {
           }
 
           // Check for conflicts by comparing updated_at timestamp
-          const { error } = await supabase
-            .from("vendors")
-            .update(dbUpdates)
-            .eq("vendor_id", id)
-            .eq("user_id", user.id)
-            .eq("updated_at", currentClient.updatedAt.toISOString());
+          const { error } = await withTimeout(
+            supabase
+              .from("vendors")
+              .update(dbUpdates)
+              .eq("vendor_id", id)
+              .eq("user_id", user.id)
+              .eq("updated_at", currentClient.updatedAt.toISOString()),
+            8000
+          );
 
           if (error) {
             throw error;
@@ -342,6 +318,7 @@ export const useSupabaseClients = () => {
       }
     },
     [user, clients, debouncer, handleAsyncOperation, validateForm]
+    [user, clients, handleAsyncOperation, validateForm]
   );
 
   const deleteClient = useCallback(
@@ -352,11 +329,14 @@ export const useSupabaseClients = () => {
 
       const result = await handleAsyncOperation(
         async () => {
-          const { error } = await supabase
-            .from("vendors")
-            .delete()
-            .eq("vendor_id", id)
-            .eq("user_id", user.id);
+          const { error } = await withTimeout(
+            supabase
+              .from("vendors")
+              .delete()
+              .eq("vendor_id", id)
+              .eq("user_id", user.id),
+            8000
+          );
 
           if (error) throw error;
         },
