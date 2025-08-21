@@ -4,6 +4,7 @@ import { supabase, DatabaseVendor, isSupabaseConfigured, getCurrentSession } fro
 import { useAuth } from "./useAuth";
 import { useErrorHandler } from "./useErrorHandler";
 import { Client } from "../types/client";
+import { connectionManager } from "../utils/connectionManager";
 
 // Add timeout wrapper for operations
 const withTimeout = async <T>(
@@ -184,29 +185,16 @@ export const useSupabaseClients = () => {
       try {
         console.log('🔍 Testing Supabase connectivity...');
         
-        // Simple connectivity test with minimal data
-        const { data: testData, error: testError } = await withTimeout(
-          () => supabase
-            .from('vendors')
-            .select('vendor_id')
-            .eq('user_id', user.id)
-            .limit(1),
-          5000,
-          'Connectivity Test'
-        );
+        // Use connection manager for smart connectivity testing
+        const isConnected = await connectionManager.testConnection(supabase, user.id);
         
-        if (testError) {
-          console.error('❌ Connectivity test failed:', testError);
+        if (!isConnected) {
+          const connectionState = connectionManager.getConnectionState();
           
-          // Provide specific error messages based on error type
-          if (testError.message.includes('timeout')) {
-            throw new Error("Database connection timeout. Please check your internet connection and try again.");
-          } else if (testError.message.includes('network')) {
-            throw new Error("Network error. Please check your internet connection.");
-          } else if (testError.code === 'PGRST301') {
-            throw new Error("Database table not found. Please contact support.");
+          if (connectionState.consecutiveFailures >= 3) {
+            throw new Error("Unable to connect to database after multiple attempts. Please check your internet connection and try again later.");
           } else {
-            throw new Error(`Database error: ${testError.message}`);
+            throw new Error("Database connection failed. Please try again.");
           }
         }
         console.log('✅ Connectivity test passed');
@@ -215,6 +203,13 @@ export const useSupabaseClients = () => {
         
         // Emit event for adaptive storage to handle
         throw connectError;
+      }
+
+      // Check if we should attempt the operation
+      if (!connectionManager.shouldAttemptConnection()) {
+        const nextRetry = connectionManager.getNextRetryTime();
+        const waitTime = nextRetry ? Math.ceil((nextRetry.getTime() - Date.now()) / 1000) : 0;
+        throw new Error(`Too many connection attempts. Please wait ${waitTime} seconds before trying again.`);
       }
 
       // Validate form data
@@ -236,13 +231,6 @@ export const useSupabaseClients = () => {
         const result = await withTimeout(
           () => handleAsyncOperation(
             async () => {
-              console.log('🔍 Checking debounce...');
-              // Check debounce
-              if (!debouncer.canSave()) {
-                throw new Error("Too many requests. Please wait a moment before saving again.");
-              }
-
-              // Mark save attempt
               debouncer.markSaved();
               console.log('✅ Debounce check passed');
 

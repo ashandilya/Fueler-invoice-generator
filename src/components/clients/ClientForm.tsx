@@ -84,8 +84,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     console.log('📝 Form submission started');
     console.log('📊 Form data:', formData);
     
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting) {
       console.log('⚠️ Form already submitting, ignoring duplicate submission');
+      return;
+    }
     
     console.log('🔍 Validating form data...');
     
@@ -100,19 +102,9 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     console.log('🔄 Setting isSubmitting to true');
     
     try {
-      // Add a small delay to prevent rapid submissions
-      await new Promise(resolve => setTimeout(resolve, 100));
       console.log('🚀 Calling onSubmit...');
       
-      // Set a backup timeout for the entire form submission
-      const formTimeoutId = setTimeout(() => {
-        console.error('⏰ Form submission timeout after 8 seconds');
-        setIsSubmitting(false);
-        alert('Form submission timed out. Please try again.');
-      }, 8000);
-      
       await onSubmit(formData);
-      clearTimeout(formTimeoutId);
       console.log('✅ onSubmit completed successfully');
     } catch (error) {
       // Error is already handled by the error handler in useSupabaseClients

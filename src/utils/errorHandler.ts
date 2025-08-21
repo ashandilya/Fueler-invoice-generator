@@ -49,6 +49,13 @@ export class ErrorHandler {
   handleError(error: any, context?: string, userId?: string): AppError {
     const appError = this.parseError(error, context, userId);
     
+    // Don't log repetitive connection errors
+    if (appError.type === ErrorType.NETWORK && 
+        this.errorQueue.filter(e => e.type === ErrorType.NETWORK).length > 3) {
+      console.log('🔇 Suppressing repetitive network error');
+      return appError;
+    }
+    
     // Log error
     this.logError(appError);
     
@@ -284,8 +291,23 @@ export class ErrorHandler {
 
   // Show user-friendly notifications
   private showUserNotification(error: AppError): void {
-    // Only show notifications for important errors to reduce noise
-    if (error.severity === ErrorSeverity.HIGH || error.severity === ErrorSeverity.CRITICAL) {
+    // Reduce notification spam for network errors
+    if (error.type === ErrorType.NETWORK) {
+      const recentNetworkErrors = this.errorQueue.filter(e => 
+        e.type === ErrorType.NETWORK && 
+        Date.now() - e.timestamp.getTime() < 30000 // Last 30 seconds
+      ).length;
+      
+      if (recentNetworkErrors > 2) {
+        console.log('🔇 Suppressing network error notification to reduce spam');
+        return;
+      }
+    }
+    
+    // Only show notifications for important errors
+    if (error.severity === ErrorSeverity.HIGH || 
+        error.severity === ErrorSeverity.CRITICAL ||
+        (error.type === ErrorType.NETWORK && error.severity === ErrorSeverity.MEDIUM)) {
       const event = new CustomEvent('showErrorToast', {
         detail: {
           message: error.userMessage,
