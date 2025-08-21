@@ -1,15 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, DatabaseInvoice } from '../lib/supabase';
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy,
+  Timestamp 
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { useAuth } from './useAuth';
 import { useErrorHandler } from './useErrorHandler';
 import { Invoice } from '../types/invoice';
 
-const convertToAppInvoice = (dbInvoice: DatabaseInvoice): Invoice => ({
-  id: dbInvoice.invoice_id,
-  invoiceNumber: dbInvoice.invoice_number,
-  date: new Date(dbInvoice.date),
-  dueDate: new Date(dbInvoice.due_date),
-  company: dbInvoice.line_items?.[0]?.company || {
+const convertToAppInvoice = (id: string, data: any): Invoice => ({
+  id,
+  invoiceNumber: data.invoiceNumber,
+  date: data.date?.toDate() || new Date(),
+  dueDate: data.dueDate?.toDate() || new Date(),
+  company: data.company || {
     name: 'KiwisMedia Technologies Pvt. Ltd.',
     address: 'HNO 238 , Bhati Abhoynagar, Nr\nVivekananda club rd, Agartala\nWard No - 1, P.O - Ramnagar,\nAgartala, West Tripura TR\n799002 IN.',
     city: 'Agartala',
@@ -22,7 +34,7 @@ const convertToAppInvoice = (dbInvoice: DatabaseInvoice): Invoice => ({
     paymentTerms: 'Payment due within 30 days\n\nBank Payment Details:\nKiwisMedia Technologies Private Limited.\nBank: IDFC Bank First\nA/C no: 10043617893\nIFSC: IDF80040101',
     invoicePrefix: 'FLB',
   },
-  client: dbInvoice.line_items?.[0]?.client || {
+  client: data.client || {
     name: '',
     address: '',
     city: '',
@@ -31,23 +43,23 @@ const convertToAppInvoice = (dbInvoice: DatabaseInvoice): Invoice => ({
     email: '',
     gstin: '',
   },
-  items: dbInvoice.line_items || [],
-  subtotal: dbInvoice.total_amount,
-  tax: 0,
-  taxRate: 0,
-  discount: 0,
-  discountType: 'percentage' as const,
-  total: dbInvoice.total_amount,
-  currency: dbInvoice.currency,
-  exchangeRate: 1,
-  notes: dbInvoice.notes || '',
-  paymentTerms: dbInvoice.payment_terms || '',
-  status: dbInvoice.status,
-  createdAt: new Date(dbInvoice.created_at),
-  updatedAt: new Date(dbInvoice.updated_at),
+  items: data.items || [],
+  subtotal: data.subtotal || 0,
+  tax: data.tax || 0,
+  taxRate: data.taxRate || 0,
+  discount: data.discount || 0,
+  discountType: data.discountType || 'percentage',
+  total: data.total || 0,
+  currency: data.currency || 'INR',
+  exchangeRate: data.exchangeRate || 1,
+  notes: data.notes || '',
+  paymentTerms: data.paymentTerms || '',
+  status: data.status || 'draft',
+  createdAt: data.createdAt?.toDate() || new Date(),
+  updatedAt: data.updatedAt?.toDate() || new Date(),
 });
 
-export const useCloudInvoices = () => {
+export const useFirebaseInvoices = () => {
   const { user } = useAuth();
   const { handleAsyncOperation } = useErrorHandler();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -64,21 +76,25 @@ export const useCloudInvoices = () => {
     
     const result = await handleAsyncOperation(
       async () => {
-        const { data, error } = await supabase
-          .from('invoices')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        return data;
+        const invoicesRef = collection(db, 'invoices');
+        const q = query(
+          invoicesRef,
+          where('userId', '==', user.uid),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const invoicesData = querySnapshot.docs.map(doc => 
+          convertToAppInvoice(doc.id, doc.data())
+        );
+        
+        return invoicesData;
       },
       'fetchInvoices'
     );
 
     if (result) {
-      const appInvoices = result.map(convertToAppInvoice);
-      setInvoices(appInvoices);
+      setInvoices(result);
     }
     
     setLoading(false);
@@ -92,43 +108,34 @@ export const useCloudInvoices = () => {
 
       const result = await handleAsyncOperation(
         async () => {
-          const dbInvoice = {
-            user_id: user.id,
-            invoice_number: invoice.invoiceNumber,
-            date: invoice.date.toISOString().split('T')[0],
-            due_date: invoice.dueDate.toISOString().split('T')[0],
-            total_amount: invoice.total,
-            currency: invoice.currency,
-            line_items: JSON.stringify({
-              items: invoice.items,
-              company: invoice.company,
-              client: invoice.client,
-              subtotal: invoice.subtotal,
-              tax: invoice.tax,
-              taxRate: invoice.taxRate,
-              discount: invoice.discount,
-              discountType: invoice.discountType,
-            }),
-            notes: invoice.notes || null,
-            payment_terms: invoice.paymentTerms || null,
-            status: invoice.status,
+          const invoicesRef = collection(db, 'invoices');
+          const invoiceData = {
+            ...invoice,
+            userId: user.uid,
+            date: Timestamp.fromDate(invoice.date),
+            dueDate: Timestamp.fromDate(invoice.dueDate),
+            createdAt: Timestamp.fromDate(invoice.createdAt),
+            updatedAt: Timestamp.now(),
           };
 
-          const { data, error } = await supabase
-            .from('invoices')
-            .upsert(dbInvoice, {
-              onConflict: 'invoice_id',
-            })
-            .select()
-            .single();
-
-          if (error) throw error;
-          return convertToAppInvoice(data);
+          // Check if invoice exists (update) or create new
+          const existingInvoice = invoices.find(inv => inv.id === invoice.id);
+          
+          if (existingInvoice) {
+            // Update existing invoice
+            const invoiceRef = doc(db, 'invoices', invoice.id);
+            await updateDoc(invoiceRef, invoiceData);
+            return convertToAppInvoice(invoice.id, invoiceData);
+          } else {
+            // Create new invoice
+            const docRef = await addDoc(invoicesRef, invoiceData);
+            return convertToAppInvoice(docRef.id, invoiceData);
+          }
         },
         'saveInvoice',
         {
           showSuccess: true,
-          successMessage: 'Invoice saved to cloud successfully!',
+          successMessage: 'Invoice saved successfully!',
           retries: 2
         }
       );
@@ -152,7 +159,7 @@ export const useCloudInvoices = () => {
 
       throw new Error('Failed to save invoice');
     },
-    [user, handleAsyncOperation]
+    [user, invoices, handleAsyncOperation]
   );
 
   const deleteInvoice = useCallback(
@@ -163,13 +170,8 @@ export const useCloudInvoices = () => {
 
       const result = await handleAsyncOperation(
         async () => {
-          const { error } = await supabase
-            .from('invoices')
-            .delete()
-            .eq('invoice_id', invoiceId)
-            .eq('user_id', user.id);
-
-          if (error) throw error;
+          const invoiceRef = doc(db, 'invoices', invoiceId);
+          await deleteDoc(invoiceRef);
         },
         'deleteInvoice',
         {

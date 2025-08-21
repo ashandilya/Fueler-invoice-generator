@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
-import { User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured, getCurrentSession } from '../lib/supabase';
+import { 
+  User,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db, isFirebaseConfigured } from '../lib/firebase';
 
 interface UserProfile {
   name: string;
@@ -9,82 +16,49 @@ interface UserProfile {
 }
 
 export const useAuth = () => {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
-    // Get initial session
-    const getSession = async () => {
-      console.log('🔍 useAuth: Getting initial session...');
-      try {
-        if (!isSupabaseConfigured()) {
-          console.log('⚠️ Supabase not configured');
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-        
-        console.log('📡 Fetching session...');
-        const sessionData = await getCurrentSession();
-        const session = sessionData?.session;
-        console.log('👤 Session user:', session?.user?.email || 'No user');
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error('❌ Error getting session:', error);
-        setUser(null);
-      } finally {
-        console.log('✅ Auth loading complete');
-        setLoading(false);
+    if (!isFirebaseConfigured()) {
+      console.log('⚠️ Firebase not configured');
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('🔄 Auth state changed:', user?.email || 'No user');
+      setUser(user);
+      
+      if (user) {
+        console.log('✅ User signed in, checking user record...');
+        const isNewUser = await createUserRecord(user);
+        setNeedsOnboarding(isNewUser);
       }
-    };
+      
+      setLoading(false);
+    });
 
-    getSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state changed:', event, session?.user?.email || 'No user');
-        setUser(session?.user ?? null);
-        setLoading(false);
-
-        // Handle user authentication
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('✅ User signed in, creating user record...');
-          const isNewUser = await createUserRecord(session.user);
-          setNeedsOnboarding(isNewUser);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
-  const createUserRecord = async (user: SupabaseUser): Promise<boolean> => {
+  const createUserRecord = async (user: User): Promise<boolean> => {
     try {
-      // Check if user already exists
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .single();
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-      if (existingUser) {
+      if (userDoc.exists()) {
         return false; // User already exists
       }
 
       // Create new user record
-      const { error } = await supabase
-        .from('users')
-        .insert({
-          user_id: user.id,
-          email: user.email!,
-        });
-
-      if (error) {
-        console.error('Error creating user record:', error);
-        return false;
-      }
+      await setDoc(userDocRef, {
+        email: user.email!,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
 
       return true; // New user created
     } catch (error) {
@@ -97,15 +71,13 @@ export const useAuth = () => {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      // Update user record with profile info
-      const { error } = await supabase
-        .from('users')
-        .update({
-          email: profile.email,
-        })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, {
+        email: profile.email,
+        name: profile.name,
+        phone: profile.phone,
+        updatedAt: new Date()
+      }, { merge: true });
 
       setNeedsOnboarding(false);
     } catch (error) {
@@ -117,18 +89,12 @@ export const useAuth = () => {
   const signInWithGoogle = async () => {
     try {
       console.log('Starting Google sign-in...');
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
+      const provider = new GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
       
-      if (error) {
-        console.error('Supabase auth error:', error);
-        throw error;
-      }
-      console.log('Google sign-in initiated successfully');
+      const result = await signInWithPopup(auth, provider);
+      console.log('Google sign-in successful:', result.user.email);
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
@@ -137,20 +103,16 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        throw error;
-      }
+      await firebaseSignOut(auth);
       
-      // Only clear auth-related data, preserve invoices and clients
+      // Clear local storage
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && (
           key.includes('auth') || 
           key.includes('session') ||
-          key.includes('supabase')
+          key.includes('firebase')
         )) {
           keysToRemove.push(key);
         }

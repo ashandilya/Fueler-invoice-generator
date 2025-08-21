@@ -18,10 +18,10 @@ import { CompanyProfileForm } from "./components/profile/CompanyProfileForm";
 import { SaveConfirmationModal } from "./components/common/SaveConfirmationModal";
 import { InvoiceActions } from "./components/invoice/InvoiceActions";
 import { useInvoice } from "./hooks/useInvoice";
-import { useSupabaseClients } from "./hooks/useSupabaseClients";
+import { useFirebaseClients } from "./hooks/useFirebaseClients";
 import { useClientInvoices } from "./hooks/useClientInvoices";
 import { useCompanyProfile } from "./hooks/useCompanyProfile";
-import { useCloudInvoices } from "./hooks/useCloudInvoices";
+import { useFirebaseInvoices } from "./hooks/useFirebaseInvoices";
 import { generateInvoicePDF } from "./utils/pdfGenerator";
 import { generateInvoiceNumber } from "./utils/invoiceUtils";
 import { Client } from "./types/client";
@@ -54,17 +54,16 @@ function AppContent() {
     resetInvoice,
   } = useInvoice(profile);
 
-  // CLOUD-ONLY: Use Supabase for all data storage
-  const cloudInvoices = useCloudInvoices();
-  const supabaseClients = useSupabaseClients();
-
-  // Only use cloud storage - no local fallback
+  // Use Firebase for all data storage
+  const firebaseInvoices = useFirebaseInvoices();
+  const firebaseClients = useFirebaseClients();
+  
   const invoicesData = {
-    invoices: cloudInvoices.invoices,
-    loading: cloudInvoices.loading,
-    saving: cloudInvoices.saving,
-    saveInvoice: cloudInvoices.saveInvoice,
-    deleteInvoice: cloudInvoices.deleteInvoice,
+    invoices: firebaseInvoices.invoices,
+    loading: firebaseInvoices.loading,
+    saving: firebaseInvoices.saving,
+    saveInvoice: firebaseInvoices.saveInvoice,
+    deleteInvoice: firebaseInvoices.deleteInvoice,
   };
 
   const [isSaving, setIsSaving] = useState(false);
@@ -77,8 +76,8 @@ function AppContent() {
   } | null>(null);
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
 
-  // CLOUD-ONLY: Use only Supabase clients
-  const { clients, loading: clientsLoading, saving: clientsSaving, addClient, updateClient, deleteClient } = supabaseClients;
+  // Use Firebase clients
+  const { clients, loading: clientsLoading, saving: clientsSaving, addClient, updateClient, deleteClient } = firebaseClients;
   
   const { addClientInvoice } = useClientInvoices();
 
@@ -192,8 +191,8 @@ function AppContent() {
 
     setIsSaving(true);
     try {
-      // CLOUD-ONLY: Save to Supabase
-      await cloudInvoices.saveInvoice(invoice);
+      // Save to Firebase
+      await firebaseInvoices.saveInvoice(invoice);
 
       // If a client is selected, associate this invoice with the client
       if (selectedClient) {
@@ -211,7 +210,7 @@ function AppContent() {
       }, 3000);
     } catch (error) {
       console.error("Error saving invoice:", error);
-      alert("Failed to save invoice to cloud. Please check your internet connection and try again.");
+      alert("Failed to save invoice. Please check your internet connection and try again.");
     } finally {
       setIsSaving(false);
     }
@@ -400,7 +399,7 @@ function AppContent() {
   };
 
   const handleShareFromPastInvoices = (invoiceToShare: Invoice) => {
-    // Create shareable link directly from cloud data
+    // Create shareable link
     const shareUrl = `${window.location.origin}/invoice/${invoiceToShare.id}`;
     navigator.clipboard
       .writeText(shareUrl)

@@ -1,6 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, CompanyProfile } from '../lib/supabase';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../lib/firebase';
 import { useAuth } from './useAuth';
+
+export interface CompanyProfile {
+  userId: string;
+  companyName?: string;
+  companyAddress?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  companyLogoUrl?: string;
+  digitalSignatureUrl?: string;
+  invoicePrefix?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export const useCompanyProfile = () => {
   const { user } = useAuth();
@@ -19,48 +35,53 @@ export const useCompanyProfile = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('company_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      const profileRef = doc(db, 'companyProfiles', user.uid);
+      const profileDoc = await getDoc(profileRef);
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        throw error;
-      }
-
-      if (data) {
-        setProfile(data);
+      if (profileDoc.exists()) {
+        const data = profileDoc.data();
+        setProfile({
+          userId: user.uid,
+          companyName: data.companyName,
+          companyAddress: data.companyAddress,
+          city: data.city,
+          state: data.state,
+          country: data.country,
+          companyLogoUrl: data.companyLogoUrl,
+          digitalSignatureUrl: data.digitalSignatureUrl,
+          invoicePrefix: data.invoicePrefix,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+        });
       } else {
-        // Create default profile if none exists
+        // Create default profile
         const defaultProfile = {
-          user_id: user.id,
-          company_name: 'KiwisMedia Technologies Pvt. Ltd.',
-          company_address: 'HNO 238 , Bhati Abhoynagar, Nr\nVivekananda club rd, Agartala\nWard No - 1, P.O - Ramnagar,\nAgartala, West Tripura TR\n799002 IN.',
+          userId: user.uid,
+          companyName: 'KiwisMedia Technologies Pvt. Ltd.',
+          companyAddress: 'HNO 238 , Bhati Abhoynagar, Nr\nVivekananda club rd, Agartala\nWard No - 1, P.O - Ramnagar,\nAgartala, West Tripura TR\n799002 IN.',
           city: 'Agartala',
           state: 'West Tripura',
           country: 'India',
-          company_logo_url: '/fueler_logo.png',
-          digital_signature_url: '/signature.png.jpg',
-          invoice_prefix: 'FLB',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          companyLogoUrl: '/fueler_logo.png',
+          digitalSignatureUrl: '/signature.png.jpg',
+          invoicePrefix: 'FLB',
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
         };
         
         try {
-          const { data: newProfile, error: createError } = await supabase
-            .from('company_profiles')
-            .insert(defaultProfile)
-            .select()
-            .single();
-            
-          if (!createError && newProfile) {
-            setProfile(newProfile);
-          } else {
-            setProfile(defaultProfile);
-          }
+          await setDoc(profileRef, defaultProfile);
+          setProfile({
+            ...defaultProfile,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
         } catch (createErr) {
-          setProfile(defaultProfile);
+          setProfile({
+            ...defaultProfile,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
         }
       }
     } catch (err) {
@@ -77,22 +98,21 @@ export const useCompanyProfile = () => {
     try {
       setError(null);
 
-      const { data, error } = await supabase
-        .from('company_profiles')
-        .upsert({
-          user_id: user.id,
-          ...updates,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id'
-        })
-        .select()
-        .single();
+      const profileRef = doc(db, 'companyProfiles', user.uid);
+      const updateData = {
+        ...updates,
+        updatedAt: Timestamp.now(),
+      };
 
-      if (error) throw error;
+      await setDoc(profileRef, updateData, { merge: true });
 
-      setProfile(data);
-      return data;
+      setProfile(prev => prev ? {
+        ...prev,
+        ...updates,
+        updatedAt: new Date(),
+      } : null);
+
+      return updateData;
     } catch (err) {
       console.error('Error updating company profile:', err);
       setError(err instanceof Error ? err.message : 'Failed to update profile');
@@ -105,22 +125,13 @@ export const useCompanyProfile = () => {
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${type}-${Date.now()}.${fileExt}`;
+      const fileName = `${user.uid}/${type}-${Date.now()}.${fileExt}`;
+      const storageRef = ref(storage, `company-assets/${fileName}`);
 
-      const { error: uploadError } = await supabase.storage
-        .from('company-assets')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
 
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('company-assets')
-        .getPublicUrl(fileName);
-
-      return data.publicUrl;
+      return downloadURL;
     } catch (err) {
       console.error('Error uploading file:', err);
       throw err;
