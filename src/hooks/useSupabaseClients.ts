@@ -174,27 +174,11 @@ export const useSupabaseClients = () => {
 
       console.log('👤 User authenticated:', user.id);
 
-      // Check Supabase configuration first
       if (!isSupabaseConfigured()) {
         console.error('❌ Supabase not configured properly');
         throw new Error("Database connection not configured. Please check your environment variables.");
       }
       console.log('✅ Supabase configuration verified');
-
-      // Test basic connectivity
-      try {
-        console.log('🔍 Testing Supabase connectivity...');
-        
-        // Simple connectivity test - just try the actual operation
-        // Don't pre-test connection, let the actual operation handle errors
-        console.log('✅ Connectivity test passed');
-      } catch (connectError) {
-        console.error('💥 Connectivity test exception:', connectError);
-        // Don't throw here, let the actual operation handle the error
-      }
-
-      // Check if we should attempt the operation
-      // Remove connection attempt blocking - let users try when they want
 
       // Validate form data
       const validationErrors = validateForm(clientData, clientValidationRules);
@@ -215,7 +199,6 @@ export const useSupabaseClients = () => {
         const result = await withTimeout(
           () => handleAsyncOperation(
             async () => {
-              console.log('✅ Debounce check passed');
 
               // Prepare client data
               const dbClient = {
@@ -330,13 +313,6 @@ export const useSupabaseClients = () => {
 
       const result = await handleAsyncOperation(
         async () => {
-          // Check debounce
-          if (!debouncer.canSave()) {
-            throw new Error("Too many requests. Please wait a moment before saving again.");
-          }
-
-          debouncer.markSaved();
-
           // Get current client for version check
           const currentClient = clients.find(c => c.id === id);
           if (!currentClient) {

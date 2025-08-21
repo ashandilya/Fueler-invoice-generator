@@ -5,7 +5,6 @@ import { InlineLoginOverlay } from "./components/auth/InlineLoginOverlay";
 import ToastContainer from "./components/common/ToastContainer";
 import OfflineIndicator from "./components/common/OfflineIndicator";
 import ErrorBoundary from "./components/common/ErrorBoundary";
-import { ConnectionStatus } from "./components/common/ConnectionStatus";
 import { useAuth } from "./hooks/useAuth";
 import { useNetworkStatus } from "./hooks/useNetworkStatus";
 import { OnboardingForm } from "./components/auth/OnboardingForm";
@@ -34,7 +33,6 @@ function App() {
       <AppContent />
       <ToastContainer />
       <OfflineIndicator />
-      <ConnectionStatus />
     </ErrorBoundary>
   );
 }
