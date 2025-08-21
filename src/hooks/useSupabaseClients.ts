@@ -222,7 +222,7 @@ export const useSupabaseClients = () => {
         throw error;
       }
     },
-    [user, debouncer, handleAsyncOperation, validateForm]
+    [user, handleAsyncOperation, validateForm]
   );
 
   const updateClient = useCallback(
@@ -317,7 +317,6 @@ export const useSupabaseClients = () => {
         );
       }
     },
-    [user, clients, debouncer, handleAsyncOperation, validateForm]
     [user, clients, handleAsyncOperation, validateForm]
   );
 
