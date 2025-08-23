@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, LogOut } from 'lucide-react';
+import { Save, LogOut, Upload } from 'lucide-react';
 import { useCompanyProfile } from '../../hooks/useCompanyProfile';
 import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../ui/Input';

@@ -21,7 +21,7 @@ import { useInvoice } from "./hooks/useInvoice";
 import { useSupabaseClients } from "./hooks/useSupabaseClients";
 import { useClientInvoices } from "./hooks/useClientInvoices";
 import { useCompanyProfile } from "./hooks/useCompanyProfile";
-import { useCloudInvoices } from "./hooks/useCloudInvoices";
+import { useSupabaseInvoices } from "./hooks/useSupabaseInvoices";
 import { generateInvoicePDF } from "./utils/pdfGenerator";
 import { generateInvoiceNumber } from "./utils/invoiceUtils";
 import { Client } from "./types/client";
@@ -54,8 +54,8 @@ function AppContent() {
     resetInvoice,
   } = useInvoice(profile);
 
-  // Use Firebase for all data storage
-  const cloudInvoices = useCloudInvoices();
+  // Use Supabase for all data storage
+  const cloudInvoices = useSupabaseInvoices();
   const supabaseClients = useSupabaseClients();
   
   const invoicesData = {
@@ -76,7 +76,7 @@ function AppContent() {
   } | null>(null);
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
 
-  // Use Firebase clients
+  // Use Supabase clients
   const { clients, loading: clientsLoading, saving: clientsSaving, addClient, updateClient, deleteClient } = supabaseClients;
   
   const { addClientInvoice } = useClientInvoices();
