@@ -15,17 +15,27 @@ export const useAuth = () => {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error);
+        setLoading(false);
+        return;
+      }
+      
       setUser(session?.user ?? null);
       if (session?.user) {
         checkUserRecord(session.user);
       }
+      setLoading(false);
+    }).catch((error) => {
+      console.error('Session initialization failed:', error);
       setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event);
         setUser(session?.user ?? null);
         if (session?.user) {
           const isNewUser = await checkUserRecord(session.user);
@@ -40,6 +50,7 @@ export const useAuth = () => {
 
   const checkUserRecord = async (user: User): Promise<boolean> => {
     try {
+      console.log('Checking user record for:', user.id);
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -47,6 +58,7 @@ export const useAuth = () => {
         .single();
 
       if (error && error.code === 'PGRST116') {
+        console.log('User record not found, creating new user');
         // User doesn't exist, create record
         const { error: insertError } = await supabase
           .from('users')
@@ -62,9 +74,16 @@ export const useAuth = () => {
           return false;
         }
 
+        console.log('New user record created successfully');
         return true; // New user created
       }
 
+      if (error) {
+        console.error('Error checking user record:', error);
+        return false;
+      }
+
+      console.log('Existing user record found');
       return false; // User already exists
     } catch (error) {
       console.error('Error checking user record:', error);
@@ -96,6 +115,7 @@ export const useAuth = () => {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('Starting Google sign-in...');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -103,7 +123,12 @@ export const useAuth = () => {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Google sign-in error:', error);
+        throw error;
+      }
+      
+      console.log('Google sign-in initiated successfully');
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;

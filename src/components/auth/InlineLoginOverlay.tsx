@@ -10,13 +10,19 @@ export const InlineLoginOverlay: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signInWithGoogle();
     } catch (error) {
       console.error('Sign in failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Sign in failed: ${errorMessage}. Please check your configuration.`);
     } finally {
-      setIsLoading(false);
+      
+      // Show user-friendly error messages
+      if (errorMessage.includes('invalid_request') || errorMessage.includes('unauthorized_client')) {
+        alert('Authentication setup incomplete. Please check your Supabase Google OAuth configuration.');
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        alert('Connection failed. Please check your internet connection and Supabase URL.');
+      } else {
+        alert(`Sign in failed: ${errorMessage}. Please check your Supabase configuration.`);
+      }
     }
   };
 
