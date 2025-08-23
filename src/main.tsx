@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { supabase } from './lib/supabase';
 import App from './App.tsx';
 import { PublicInvoiceView } from './components/invoice/PublicInvoiceView';
 import './index.css';

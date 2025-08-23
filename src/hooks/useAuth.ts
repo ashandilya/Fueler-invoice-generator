@@ -1,13 +1,6 @@
 import { useState, useEffect } from 'react';
-import { 
-  User,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut as firebaseSignOut,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db, isFirebaseConfigured } from '../lib/firebase';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 
 interface UserProfile {
   name: string;
@@ -21,48 +14,60 @@ export const useAuth = () => {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
-    if (!isFirebaseConfigured()) {
-      console.log('⚠️ Firebase not configured');
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('🔄 Auth state changed:', user?.email || 'No user');
-      setUser(user);
-      
-      if (user) {
-        console.log('✅ User signed in, checking user record...');
-        const isNewUser = await createUserRecord(user);
-        setNeedsOnboarding(isNewUser);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkUserRecord(session.user);
       }
-      
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          const isNewUser = await checkUserRecord(session.user);
+          setNeedsOnboarding(isNewUser);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const createUserRecord = async (user: User): Promise<boolean> => {
+  const checkUserRecord = async (user: User): Promise<boolean> => {
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-      if (userDoc.exists()) {
-        return false; // User already exists
+      if (error && error.code === 'PGRST116') {
+        // User doesn't exist, create record
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            email: user.email!,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (insertError) {
+          console.error('Error creating user record:', insertError);
+          return false;
+        }
+
+        return true; // New user created
       }
 
-      // Create new user record
-      await setDoc(userDocRef, {
-        email: user.email!,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      return true; // New user created
+      return false; // User already exists
     } catch (error) {
-      console.error('Error creating user record:', error);
+      console.error('Error checking user record:', error);
       return false;
     }
   };
@@ -71,13 +76,16 @@ export const useAuth = () => {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, {
-        email: profile.email,
-        name: profile.name,
-        phone: profile.phone,
-        updatedAt: new Date()
-      }, { merge: true });
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: profile.name,
+          phone: profile.phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
 
       setNeedsOnboarding(false);
     } catch (error) {
@@ -88,13 +96,14 @@ export const useAuth = () => {
 
   const signInWithGoogle = async () => {
     try {
-      console.log('Starting Google sign-in...');
-      const provider = new GoogleAuthProvider();
-      provider.addScope('email');
-      provider.addScope('profile');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
       
-      const result = await signInWithPopup(auth, provider);
-      console.log('Google sign-in successful:', result.user.email);
+      if (error) throw error;
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
@@ -103,21 +112,11 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
-      await firebaseSignOut(auth);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
       // Clear local storage
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (
-          key.includes('auth') || 
-          key.includes('session') ||
-          key.includes('firebase')
-        )) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      localStorage.clear();
       
       // Force page reload to clear all state
       window.location.reload();

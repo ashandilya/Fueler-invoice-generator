@@ -18,10 +18,10 @@ import { CompanyProfileForm } from "./components/profile/CompanyProfileForm";
 import { SaveConfirmationModal } from "./components/common/SaveConfirmationModal";
 import { InvoiceActions } from "./components/invoice/InvoiceActions";
 import { useInvoice } from "./hooks/useInvoice";
-import { useFirebaseClients } from "./hooks/useFirebaseClients";
+import { useSupabaseClients } from "./hooks/useSupabaseClients";
 import { useClientInvoices } from "./hooks/useClientInvoices";
 import { useCompanyProfile } from "./hooks/useCompanyProfile";
-import { useFirebaseInvoices } from "./hooks/useFirebaseInvoices";
+import { useCloudInvoices } from "./hooks/useCloudInvoices";
 import { generateInvoicePDF } from "./utils/pdfGenerator";
 import { generateInvoiceNumber } from "./utils/invoiceUtils";
 import { Client } from "./types/client";
@@ -55,15 +55,15 @@ function AppContent() {
   } = useInvoice(profile);
 
   // Use Firebase for all data storage
-  const firebaseInvoices = useFirebaseInvoices();
-  const firebaseClients = useFirebaseClients();
+  const cloudInvoices = useCloudInvoices();
+  const supabaseClients = useSupabaseClients();
   
   const invoicesData = {
-    invoices: firebaseInvoices.invoices,
-    loading: firebaseInvoices.loading,
-    saving: firebaseInvoices.saving,
-    saveInvoice: firebaseInvoices.saveInvoice,
-    deleteInvoice: firebaseInvoices.deleteInvoice,
+    invoices: cloudInvoices.invoices,
+    loading: cloudInvoices.loading,
+    saving: cloudInvoices.saving,
+    saveInvoice: cloudInvoices.saveInvoice,
+    deleteInvoice: cloudInvoices.deleteInvoice,
   };
 
   const [isSaving, setIsSaving] = useState(false);
@@ -77,7 +77,7 @@ function AppContent() {
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
 
   // Use Firebase clients
-  const { clients, loading: clientsLoading, saving: clientsSaving, addClient, updateClient, deleteClient } = firebaseClients;
+  const { clients, loading: clientsLoading, saving: clientsSaving, addClient, updateClient, deleteClient } = supabaseClients;
   
   const { addClientInvoice } = useClientInvoices();
 
@@ -192,7 +192,7 @@ function AppContent() {
     setIsSaving(true);
     try {
       // Save to Firebase
-      await firebaseInvoices.saveInvoice(invoice);
+      await cloudInvoices.saveInvoice(invoice);
 
       // If a client is selected, associate this invoice with the client
       if (selectedClient) {
